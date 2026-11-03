@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "628731410172",
+    "project_id": "aau-pc-verify",
+    "storage_bucket": "aau-pc-verify.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:628731410172:android:f014f8efd24b1cbdc0c979",
+        "android_client_info": {
+          "package_name": "edu.aau.aau_pc_verify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUAFnlFRNYw2ot9C1sXciXZQquWJJmU64"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
