@@ -72,10 +72,12 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Registration Successful'), findsOneWidget);
+      expect(find.text('Registration Completed'), findsOneWidget);
       expect(find.text('test-reg-id-999'), findsOneWidget);
       expect(find.text('Tigist Assefa (UGR/7777/14)'), findsOneWidget);
       expect(find.text('Lenovo IdeaPad 3'), findsOneWidget);
+      expect(find.text('OFFICIAL QR VERIFICATION PASS'), findsOneWidget);
+      expect(find.text('SIX-DIGIT REGISTRATION CODE'), findsOneWidget);
       expect(find.text('Register Another Computer'), findsOneWidget);
     });
 

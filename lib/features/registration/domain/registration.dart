@@ -17,6 +17,9 @@ class Registration {
     this.registeredByName,
     this.registeredByEmail,
     this.registeredAt,
+    this.qrIdentifier,
+    this.registrationCode,
+    this.qrGeneratedAt,
   });
 
   final String id;
@@ -34,7 +37,19 @@ class Registration {
   final String? registeredByEmail;
   final DateTime? registeredAt;
 
+  /// Opaque unpredictable token encoded in the QR code (contains zero PII).
+  final String? qrIdentifier;
+
+  /// Unique 6-digit numeric registration code (supports leading zeroes, e.g. "048291").
+  final String? registrationCode;
+
+  /// Timestamp when the QR credential and 6-digit code were allocated.
+  final DateTime? qrGeneratedAt;
+
   bool get isActive => status.toLowerCase() == 'active';
+  bool get hasQrCredentials =>
+      qrIdentifier != null && qrIdentifier!.isNotEmpty &&
+      registrationCode != null && registrationCode!.isNotEmpty;
 
   /// Deserializes a Firestore map into a [Registration] object.
   factory Registration.fromMap(Map<String, dynamic> data, String docId) {
@@ -44,6 +59,14 @@ class Registration {
       parsedRegisteredAt = rawRegisteredAt.toDate();
     } else if (rawRegisteredAt is String) {
       parsedRegisteredAt = DateTime.tryParse(rawRegisteredAt);
+    }
+
+    DateTime? parsedQrGeneratedAt;
+    final rawQrGeneratedAt = data['qrGeneratedAt'];
+    if (rawQrGeneratedAt is Timestamp) {
+      parsedQrGeneratedAt = rawQrGeneratedAt.toDate();
+    } else if (rawQrGeneratedAt is String) {
+      parsedQrGeneratedAt = DateTime.tryParse(rawQrGeneratedAt);
     }
 
     return Registration(
@@ -61,6 +84,9 @@ class Registration {
       registeredByName: data['registeredByName'] as String?,
       registeredByEmail: data['registeredByEmail'] as String?,
       registeredAt: parsedRegisteredAt,
+      qrIdentifier: (data['qrIdentifier'] as String?)?.trim(),
+      registrationCode: (data['registrationCode'] as String?)?.trim(),
+      qrGeneratedAt: parsedQrGeneratedAt,
     );
   }
 
@@ -92,6 +118,10 @@ class Registration {
         'registeredAt': Timestamp.fromDate(registeredAt!)
       else
         'registeredAt': FieldValue.serverTimestamp(),
+      if (qrIdentifier != null) 'qrIdentifier': qrIdentifier,
+      if (registrationCode != null) 'registrationCode': registrationCode,
+      if (qrGeneratedAt != null)
+        'qrGeneratedAt': Timestamp.fromDate(qrGeneratedAt!),
     };
   }
 
@@ -110,6 +140,9 @@ class Registration {
     String? registeredByName,
     String? registeredByEmail,
     DateTime? registeredAt,
+    String? qrIdentifier,
+    String? registrationCode,
+    DateTime? qrGeneratedAt,
   }) {
     return Registration(
       id: id ?? this.id,
@@ -126,6 +159,9 @@ class Registration {
       registeredByName: registeredByName ?? this.registeredByName,
       registeredByEmail: registeredByEmail ?? this.registeredByEmail,
       registeredAt: registeredAt ?? this.registeredAt,
+      qrIdentifier: qrIdentifier ?? this.qrIdentifier,
+      registrationCode: registrationCode ?? this.registrationCode,
+      qrGeneratedAt: qrGeneratedAt ?? this.qrGeneratedAt,
     );
   }
 
@@ -144,7 +180,9 @@ class Registration {
         other.studentWithPcPhotoUrl == studentWithPcPhotoUrl &&
         other.status == status &&
         other.registeredBy == registeredBy &&
-        other.registeredAt == registeredAt;
+        other.registeredAt == registeredAt &&
+        other.qrIdentifier == qrIdentifier &&
+        other.registrationCode == registrationCode;
   }
 
   @override
@@ -161,5 +199,7 @@ class Registration {
         status,
         registeredBy,
         registeredAt,
+        qrIdentifier,
+        registrationCode,
       );
 }

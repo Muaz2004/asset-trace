@@ -25,6 +25,11 @@ class RoutePaths {
   static const String registrationSuccess = '/registration/success';
   static const String registrationList = '/registration/list';
   static const String registrationDetail = '/registration/detail/:id';
+
+  // Computer Ownership Verification (Phase 4)
+  static const String qrScanner = '/verification/scan';
+  static const String manualLookup = '/verification/lookup';
+  static const String ownershipVerification = '/verification/verify/:id';
 }
 
 class RouteNames {
@@ -50,4 +55,9 @@ class RouteNames {
   static const String registrationSuccess = 'registration-success';
   static const String registrationList = 'registration-list';
   static const String registrationDetail = 'registration-detail';
+
+  // Computer Ownership Verification (Phase 4)
+  static const String qrScanner = 'qr-scanner';
+  static const String manualLookup = 'manual-lookup';
+  static const String ownershipVerification = 'ownership-verification';
 }

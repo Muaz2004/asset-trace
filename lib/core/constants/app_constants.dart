@@ -10,6 +10,7 @@ class AppConstants {
   static const String staffCollection = 'staff';
   static const String registrationsCollection = 'registrations';
   static const String activeSerialsCollection = 'active_serials';
+  static const String verificationLogsCollection = 'verification_logs';
 
   // Cloudinary configuration (Unsigned upload)
   static const String cloudinaryCloudName = 'cyk4nxfd';

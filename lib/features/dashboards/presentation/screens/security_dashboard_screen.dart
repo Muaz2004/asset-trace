@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/routing/route_paths.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../verification/presentation/widgets/verification_activity_list.dart';
 
 /// Dashboard for Campus Security Officers performing gate and checkpoint computer verifications.
 class SecurityDashboardScreen extends ConsumerWidget {
@@ -95,38 +96,42 @@ class SecurityDashboardScreen extends ConsumerWidget {
                   Expanded(
                     child: Card(
                       color: colorScheme.surfaceContainerLow,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(10),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => context.push(RoutePaths.qrScanner),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.qr_code_scanner_rounded,
+                                  color: colorScheme.primary,
+                                  size: 24,
+                                ),
                               ),
-                              child: Icon(
-                                Icons.qr_code_scanner_rounded,
-                                color: colorScheme.primary,
-                                size: 24,
+                              const SizedBox(height: 12),
+                              Text(
+                                'QR Code Scanner',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'QR Code Scanner',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
+                              const SizedBox(height: 4),
+                              Text(
+                                'Fast camera scanner for gate passes and checkpoint barcodes.',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Camera scanner module for rapid barcode reading at checkpoints.',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -135,45 +140,49 @@ class SecurityDashboardScreen extends ConsumerWidget {
                   Expanded(
                     child: Card(
                       color: colorScheme.surfaceContainerLow,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(10),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => context.push(RoutePaths.manualLookup),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.pin_outlined,
+                                  color: colorScheme.primary,
+                                  size: 24,
+                                ),
                               ),
-                              child: Icon(
-                                Icons.pin_outlined,
-                                color: colorScheme.primary,
-                                size: 24,
+                              const SizedBox(height: 12),
+                              Text(
+                                'Registration Lookup',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Registration Lookup',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
+                              const SizedBox(height: 4),
+                              Text(
+                                'Manual search by unique 6-digit numeric registration code.',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Manual search by unique registration number or student ID.',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
 
               // Security Activity Logs
               Text(
@@ -183,38 +192,9 @@ class SecurityDashboardScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Card(
-                color: colorScheme.surfaceContainerLow,
-                child: Padding(
-                  padding: const EdgeInsets.all(28.0),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.fact_check_outlined,
-                          size: 44,
-                          color: colorScheme.outline,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No Checkpoint Activity Logged',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Computer verification scans and checkpoint passage records will appear here.',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              const VerificationActivityList(
+                limit: 10,
+                emptyMessage: 'No checkpoint passage activity logged yet.',
               ),
             ],
           ),

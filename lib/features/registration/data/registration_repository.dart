@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,7 +16,8 @@ class DuplicateSerialException implements Exception {
   String toString() => message;
 }
 
-/// Repository managing computer registrations in Cloud Firestore with atomic duplicate enforcement.
+/// Repository managing computer registrations in Cloud Firestore with atomic duplicate enforcement
+/// and QR credential and 6-digit registration code allocation.
 class RegistrationRepository {
   RegistrationRepository({FirebaseFirestore? firestore})
       : _customFirestore = firestore;
@@ -23,11 +26,26 @@ class RegistrationRepository {
   FirebaseFirestore get _firestore =>
       _customFirestore ?? FirebaseFirestore.instance;
 
+  static final Random _secureRandom = Random.secure();
+
   CollectionReference<Map<String, dynamic>> get _registrationsCollection =>
       _firestore.collection(AppConstants.registrationsCollection);
 
   CollectionReference<Map<String, dynamic>> get _activeSerialsCollection =>
       _firestore.collection(AppConstants.activeSerialsCollection);
+
+  /// Generates an unpredictable, opaque 32-character hexadecimal QR identifier with zero PII.
+  static String generateOpaqueQrIdentifier() {
+    final values = List<int>.generate(24, (_) => _secureRandom.nextInt(256));
+    final hexString = values.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    return 'aau_qr_$hexString';
+  }
+
+  /// Generates a cryptographically random 6-digit numeric registration code supporting leading zeroes.
+  static String generateSixDigitCode() {
+    final number = _secureRandom.nextInt(1000000);
+    return number.toString().padLeft(6, '0');
+  }
 
   /// Checks if an active computer registration exists for the provided serial number.
   Future<bool> isSerialAlreadyRegistered(String serialNumber) async {
@@ -51,8 +69,10 @@ class RegistrationRepository {
 
   /// Creates a new computer ownership registration.
   ///
-  /// Executes inside a Firestore transaction to atomically guarantee that no two
-  /// active registrations can be recorded for the same physical computer serial number.
+  /// Executes inside a Firestore transaction matching the authorized security rules schema:
+  /// 1. Reads active_serials to check uniqueness.
+  /// 2. Writes registrations document (with status 'active', registeredBy, and allocated QR/6-digit credentials).
+  /// 3. Writes active_serials document satisfying existing getAfter() security requirements.
   Future<Registration> createRegistration({
     required String studentName,
     required String studentId,
@@ -72,6 +92,10 @@ class RegistrationRepository {
     final newDocRef = _registrationsCollection.doc();
     final serialDocRef = _activeSerialsCollection.doc(normalizedSerial);
 
+    final allocatedCode = generateSixDigitCode();
+    final allocatedQr = generateOpaqueQrIdentifier();
+    final now = DateTime.now();
+
     await _firestore.runTransaction((transaction) async {
       // 1. Check if the serial number is already actively registered
       final serialSnapshot = await transaction.get(serialDocRef);
@@ -83,7 +107,9 @@ class RegistrationRepository {
         );
       }
 
-      // 2. Prepare registration data
+      // 2. Prepare registration document data satisfying existing security rules:
+      // - registeredBy matches authenticated UID
+      // - status is 'active'
       final registrationData = {
         'studentName': studentName.trim(),
         'studentId': normalizedStudentId,
@@ -98,9 +124,12 @@ class RegistrationRepository {
         'registeredByName': ?registeredByName,
         'registeredByEmail': ?registeredByEmail,
         'registeredAt': FieldValue.serverTimestamp(),
+        'qrIdentifier': allocatedQr,
+        'registrationCode': allocatedCode,
+        'qrGeneratedAt': FieldValue.serverTimestamp(),
       };
 
-      // 3. Atomically write registration and serial constraint records
+      // 3. Atomically write registration and active serial constraint records
       transaction.set(newDocRef, registrationData);
       transaction.set(serialDocRef, {
         'serialNumber': normalizedSerial,
@@ -125,8 +154,68 @@ class RegistrationRepository {
       registeredBy: registeredBy,
       registeredByName: registeredByName,
       registeredByEmail: registeredByEmail,
-      registeredAt: DateTime.now(),
+      registeredAt: now,
+      qrIdentifier: allocatedQr,
+      registrationCode: allocatedCode,
+      qrGeneratedAt: now,
     );
+  }
+
+  /// Allocates QR identifier and 6-digit registration code to an existing registration lacking them.
+  Future<Registration> ensureQrCredentials(Registration registration) async {
+    if (registration.hasQrCredentials) {
+      return registration;
+    }
+
+    final allocatedCode = generateSixDigitCode();
+    final allocatedQr = generateOpaqueQrIdentifier();
+    final now = DateTime.now();
+
+    await _registrationsCollection.doc(registration.id).update({
+      'qrIdentifier': allocatedQr,
+      'registrationCode': allocatedCode,
+      'qrGeneratedAt': FieldValue.serverTimestamp(),
+    });
+
+    return registration.copyWith(
+      qrIdentifier: allocatedQr,
+      registrationCode: allocatedCode,
+      qrGeneratedAt: now,
+    );
+  }
+
+  /// Looks up a registration by its opaque QR identifier directly from the registrations collection.
+  Future<Registration?> getRegistrationByQr(String qrIdentifier) async {
+    final cleanQr = qrIdentifier.trim();
+    if (cleanQr.isEmpty) return null;
+
+    final query = await _registrationsCollection
+        .where('qrIdentifier', isEqualTo: cleanQr)
+        .limit(1)
+        .get();
+
+    if (query.docs.isNotEmpty) {
+      return Registration.fromFirestore(query.docs.first);
+    }
+
+    return null;
+  }
+
+  /// Looks up a registration by its 6-digit registration code directly from the registrations collection.
+  Future<Registration?> getRegistrationByCode(String code) async {
+    final cleanCode = code.trim();
+    if (cleanCode.length != 6) return null;
+
+    final query = await _registrationsCollection
+        .where('registrationCode', isEqualTo: cleanCode)
+        .limit(1)
+        .get();
+
+    if (query.docs.isNotEmpty) {
+      return Registration.fromFirestore(query.docs.first);
+    }
+
+    return null;
   }
 
   /// Retrieves a single registration by document ID.

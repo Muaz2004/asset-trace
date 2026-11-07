@@ -20,6 +20,9 @@ import '../../features/registration/presentation/screens/registration_detail_scr
 import '../../features/registration/presentation/screens/registration_form_screen.dart';
 import '../../features/registration/presentation/screens/registration_list_screen.dart';
 import '../../features/registration/presentation/screens/registration_success_screen.dart';
+import '../../features/verification/presentation/screens/manual_lookup_screen.dart';
+import '../../features/verification/presentation/screens/ownership_verification_screen.dart';
+import '../../features/verification/presentation/screens/qr_scanner_screen.dart';
 import 'route_paths.dart';
 
 /// Listenable that triggers GoRouter redirect re-evaluation whenever auth state changes.
@@ -105,6 +108,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return RoutePaths.accessDenied;
         }
 
+        if (path.startsWith('/verification') && !role.canAccessVerification) {
+          return RoutePaths.accessDenied;
+        }
+
         // Profile and access denied routes are accessible to all authenticated staff
         return null;
       }
@@ -183,6 +190,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final registrationId = state.pathParameters['id'] ?? '';
           return RegistrationDetailScreen(registrationId: registrationId);
+        },
+      ),
+
+      // Computer Ownership Verification (Phase 4)
+      GoRoute(
+        path: RoutePaths.qrScanner,
+        name: RouteNames.qrScanner,
+        builder: (context, state) => const QrScannerScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.manualLookup,
+        name: RouteNames.manualLookup,
+        builder: (context, state) => const ManualLookupScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.ownershipVerification,
+        name: RouteNames.ownershipVerification,
+        builder: (context, state) {
+          final registrationId = state.pathParameters['id'] ?? '';
+          final method = state.uri.queryParameters['method'] ?? 'QR';
+          return OwnershipVerificationScreen(
+            registrationId: registrationId,
+            verificationMethod: method,
+          );
         },
       ),
 

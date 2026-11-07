@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/routing/route_paths.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../verification/presentation/widgets/verification_activity_list.dart';
 
 /// Dashboard for Library Staff performing computer ownership verification.
 class LibraryDashboardScreen extends ConsumerWidget {
@@ -82,9 +83,9 @@ class LibraryDashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
 
-              // Library PC Verification Info
+              // Verification Actions Section
               Text(
-                'Library Verification',
+                'Computer Ownership Check',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -123,7 +124,7 @@ class LibraryDashboardScreen extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              'Verification Module',
+                              'Active Module',
                               style: theme.textTheme.labelSmall?.copyWith(
                                 color: colorScheme.onSecondaryContainer,
                                 fontWeight: FontWeight.w600,
@@ -132,20 +133,46 @@ class LibraryDashboardScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       Text(
-                        'Authorized library staff verify student computer registration before entry and monitor computer usage compliance across campus libraries.',
+                        'Scan student computer QR passes at the entrance or verify 6-digit registration codes before granting access to study zones.',
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
+                      ),
+                      const SizedBox(height: 18),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: () => context.push(RoutePaths.qrScanner),
+                              icon: const Icon(Icons.qr_code_scanner_rounded),
+                              label: const Text('Scan QR Pass'),
+                              style: FilledButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => context.push(RoutePaths.manualLookup),
+                              icon: const Icon(Icons.pin_outlined),
+                              label: const Text('6-Digit Code'),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
 
-              // Library Verification History
+              // Live Verification History
               Text(
                 'Recent Verification History',
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -153,38 +180,9 @@ class LibraryDashboardScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Card(
-                color: colorScheme.surfaceContainerLow,
-                child: Padding(
-                  padding: const EdgeInsets.all(28.0),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.history_edu_rounded,
-                          size: 44,
-                          color: colorScheme.outline,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No Verification Logs Recorded',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Library computer check-in and ownership verification history will be displayed here.',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              const VerificationActivityList(
+                limit: 10,
+                emptyMessage: 'No library verification logs recorded yet.',
               ),
             ],
           ),

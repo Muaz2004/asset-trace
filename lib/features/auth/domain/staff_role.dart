@@ -41,6 +41,13 @@ enum StaffRole {
   bool get canAccessSecurity =>
       this == StaffRole.admin || this == StaffRole.securityOfficer;
 
+  /// Whether this role can access computer ownership verification (scanning and manual lookup).
+  bool get canAccessVerification =>
+      this == StaffRole.admin ||
+      this == StaffRole.libraryStaff ||
+      this == StaffRole.securityOfficer ||
+      this == StaffRole.registrationOfficer;
+
   /// Role icon for UI display.
   IconData get icon {
     switch (this) {
