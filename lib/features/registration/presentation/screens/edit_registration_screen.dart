@@ -28,6 +28,7 @@ class _EditRegistrationScreenState
   late TextEditingController _phoneController;
   late TextEditingController _brandController;
   late TextEditingController _modelController;
+  late TextEditingController _serialController;
 
   bool _initialized = false;
   bool _isSaving = false;
@@ -40,6 +41,7 @@ class _EditRegistrationScreenState
     _phoneController = TextEditingController();
     _brandController = TextEditingController();
     _modelController = TextEditingController();
+    _serialController = TextEditingController();
   }
 
   @override
@@ -48,6 +50,7 @@ class _EditRegistrationScreenState
     _phoneController.dispose();
     _brandController.dispose();
     _modelController.dispose();
+    _serialController.dispose();
     super.dispose();
   }
 
@@ -57,6 +60,7 @@ class _EditRegistrationScreenState
     _phoneController.text = reg.phoneNumber;
     _brandController.text = reg.pcBrand;
     _modelController.text = reg.pcModel;
+    _serialController.text = reg.serialNumber;
     _initialized = true;
   }
 
@@ -82,6 +86,7 @@ class _EditRegistrationScreenState
         phoneNumber: _phoneController.text.trim(),
         pcBrand: _brandController.text.trim(),
         pcModel: _modelController.text.trim(),
+        serialNumber: profile.isAdmin ? _serialController.text.trim() : null,
         updatedBy: profile.uid,
         updatedByName: profile.name,
       );
@@ -109,6 +114,8 @@ class _EditRegistrationScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final profile = ref.watch(appAuthStateProvider).profile;
+    final isAdmin = profile?.isAdmin ?? false;
     final registrationStream = ref
         .watch(registrationRepositoryProvider)
         .watchRegistration(widget.registrationId);
@@ -280,6 +287,23 @@ class _EditRegistrationScreenState
                           ),
                           validator: Validators.validatePcModel,
                           enabled: !_isSaving,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _serialController,
+                          decoration: InputDecoration(
+                            labelText: isAdmin
+                                ? 'Serial Number (Admin Only) *'
+                                : 'Serial Number (Admin Edit Only)',
+                            prefixIcon: const Icon(Icons.qr_code_2),
+                            helperText: isAdmin
+                                ? 'Admin can correct serial numbers if a typo was made.'
+                                : 'Only System Administrators can change registered serial numbers.',
+                            border: const OutlineInputBorder(),
+                          ),
+                          validator: isAdmin ? Validators.validateSerialNumber : null,
+                          textCapitalization: TextCapitalization.characters,
+                          enabled: !_isSaving && isAdmin,
                         ),
                         const SizedBox(height: 32),
 

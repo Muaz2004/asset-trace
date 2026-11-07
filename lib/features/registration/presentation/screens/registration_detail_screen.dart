@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_indicator.dart';
 import '../../../auth/domain/staff_role.dart';
@@ -89,12 +91,111 @@ class RegistrationDetailScreen extends ConsumerWidget {
     );
   }
 
+  void _showPassDialog(BuildContext context, Registration registration) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final qrData = registration.qrIdentifier ?? registration.id;
+    final code = registration.registrationCode ?? '------';
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.qr_code_2_rounded, color: colorScheme.primary),
+            const SizedBox(width: 10),
+            const Text('PC Verification Pass'),
+          ],
+        ),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 340),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                AppConstants.institutionName,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Official PC Ownership Credential',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: QrImageView(
+                  data: qrData,
+                  version: QrVersions.auto,
+                  size: 200,
+                  backgroundColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '6-DIGIT VERIFICATION CODE',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.primary,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: SelectableText(
+                  code.split('').join('  '),
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'monospace',
+                    letterSpacing: 4.0,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Registered to: ${registration.studentName}\nStudent ID: ${registration.studentId}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showStatusDialog(BuildContext context, WidgetRef ref, Registration reg) {
     final authState = ref.read(appAuthStateProvider);
     final profile = authState.profile;
     if (profile == null) return;
 
-    final isSuspendedOrStolen = reg.isSuspended || reg.isReportedStolen;
+    final isSuspendedOrStolen = reg.isSuspended || reg.isReportedStolen || reg.isArchived;
 
     showDialog(
       context: context,
@@ -268,13 +369,161 @@ class RegistrationDetailScreen extends ConsumerWidget {
     );
   }
 
+  void _showArchiveDialog(BuildContext context, WidgetRef ref, Registration reg) {
+    final authState = ref.read(appAuthStateProvider);
+    final profile = authState.profile;
+    if (profile == null || !profile.isAdmin) return;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        final reasonController = TextEditingController();
+        bool isSubmitting = false;
+        String? errorMessage;
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.archive_rounded, color: Colors.blueGrey.shade700),
+                  const SizedBox(width: 8),
+                  const Text('Archive Registration'),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.amber.shade300),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.warning_amber_rounded,
+                              color: Colors.amber.shade900, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Archiving safely soft-deletes this registration. The serial number will be freed for future registrations, checkpoint access will be revoked, but the audit history and images remain preserved.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.amber.shade900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Student: ${reg.studentName} (${reg.studentId})',
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    ),
+                    Text(
+                      'PC: ${reg.pcBrand} ${reg.pcModel} (${reg.serialNumber})',
+                      style: const TextStyle(fontSize: 12, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: reasonController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Removal / Archive Reason *',
+                        hintText:
+                            'e.g. Student graduated / device ownership transferred / registered by error',
+                        border: const OutlineInputBorder(),
+                        errorText: errorMessage,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.blueGrey.shade800,
+                  ),
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          final reason = reasonController.text.trim();
+                          if (reason.isEmpty) {
+                            setState(() => errorMessage =
+                                'Please provide an archiving reason.');
+                            return;
+                          }
+                          setState(() {
+                            isSubmitting = true;
+                            errorMessage = null;
+                          });
+                          try {
+                            final repo = ref.read(registrationRepositoryProvider);
+                            await repo.archiveRegistration(
+                              registrationId: reg.id,
+                              reason: reason,
+                              archivedBy: profile.uid,
+                              archivedByName: profile.name,
+                            );
+                            if (dialogContext.mounted) {
+                              Navigator.of(dialogContext).pop();
+                            }
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Registration archived successfully.'),
+                                  backgroundColor: Colors.blueGrey,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            setState(() {
+                              isSubmitting = false;
+                              errorMessage = 'Archiving failed: $e';
+                            });
+                          }
+                        },
+                  child: isSubmitting
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Confirm Archive'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final registrationStream =
         ref.watch(registrationRepositoryProvider).watchRegistration(registrationId);
-    final currentRole = ref.watch(appAuthStateProvider).profile?.role;
+    final authProfile = ref.watch(appAuthStateProvider).profile;
+    final currentRole = authProfile?.role;
+    final isAdmin = authProfile?.isAdmin ?? false;
     final canManage =
         currentRole == StaffRole.admin || currentRole == StaffRole.registrationOfficer;
 
@@ -296,6 +545,8 @@ class RegistrationDetailScreen extends ConsumerWidget {
                       context.push('/registration/edit/${reg.id}');
                     } else if (val == 'status') {
                       _showStatusDialog(context, ref, reg);
+                    } else if (val == 'archive') {
+                      _showArchiveDialog(context, ref, reg);
                     }
                   },
                   itemBuilder: (context) => [
@@ -324,6 +575,15 @@ class RegistrationDetailScreen extends ConsumerWidget {
                         contentPadding: EdgeInsets.zero,
                       ),
                     ),
+                    if (isAdmin && !reg.isArchived)
+                      const PopupMenuItem(
+                        value: 'archive',
+                        child: ListTile(
+                          leading: Icon(Icons.archive_outlined, color: Colors.blueGrey),
+                          title: Text('Archive & Remove (Admin)'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
                   ],
                 ),
             ],
@@ -362,7 +622,59 @@ class RegistrationDetailScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         // Sensitive Status Warning Banners
-                        if (reg.isReportedStolen) ...[
+                        if (reg.isArchived) ...[
+                          Card(
+                            color: Colors.blueGrey.shade800,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.archive_rounded,
+                                      color: Colors.white, size: 36),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'ARCHIVED REGISTRATION',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 15,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                        if (reg.statusReason != null &&
+                                            reg.statusReason!.isNotEmpty) ...[
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Reason: ${reg.statusReason}',
+                                            style: const TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: 13),
+                                          ),
+                                        ],
+                                        if (reg.archivedByName != null ||
+                                            reg.statusChangedByName != null) ...[
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'Archived by: ${reg.archivedByName ?? reg.statusChangedByName}',
+                                            style: const TextStyle(
+                                                color: Colors.white60,
+                                                fontSize: 11),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ] else if (reg.isReportedStolen) ...[
                           Card(
                             color: Colors.red.shade900,
                             child: Padding(
@@ -506,7 +818,9 @@ class RegistrationDetailScreen extends ConsumerWidget {
                                                   ? Colors.green.shade50
                                                   : (reg.isReportedStolen
                                                       ? Colors.red.shade50
-                                                      : Colors.amber.shade50),
+                                                      : (reg.isArchived
+                                                          ? Colors.blueGrey.shade50
+                                                          : Colors.amber.shade50)),
                                               borderRadius:
                                                   BorderRadius.circular(6),
                                             ),
@@ -519,7 +833,9 @@ class RegistrationDetailScreen extends ConsumerWidget {
                                                     ? Colors.green.shade800
                                                     : (reg.isReportedStolen
                                                         ? Colors.red.shade800
-                                                        : Colors.amber.shade900),
+                                                        : (reg.isArchived
+                                                            ? Colors.blueGrey.shade800
+                                                            : Colors.amber.shade900)),
                                               ),
                                             ),
                                           ),
@@ -551,6 +867,148 @@ class RegistrationDetailScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 20),
 
+                        // Official Verification Pass Card (QR Code & 6-Digit Code)
+                        Card(
+                          color: colorScheme.surfaceContainerLow,
+                          child: Padding(
+                            padding: const EdgeInsets.all(20.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.qr_code_2_rounded,
+                                      color: colorScheme.primary,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Official Verification Pass',
+                                      style: theme.textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    if (reg.qrIdentifier != null || reg.hasQrCredentials)
+                                      IconButton(
+                                        icon: const Icon(Icons.fullscreen_rounded),
+                                        tooltip: 'Enlarge QR Pass',
+                                        onPressed: () => _showPassDialog(context, reg),
+                                      ),
+                                  ],
+                                ),
+                                const Divider(height: 20),
+                                const SizedBox(height: 6),
+                                if (reg.qrIdentifier != null || reg.hasQrCredentials) ...[
+                                  InkWell(
+                                    onTap: () => _showPassDialog(context, reg),
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: Colors.grey.shade300),
+                                      ),
+                                      child: QrImageView(
+                                        data: reg.qrIdentifier ?? reg.id,
+                                        version: QrVersions.auto,
+                                        size: 160,
+                                        backgroundColor: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Tap to enlarge or scan directly from screen',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ] else ...[
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Icon(
+                                          Icons.qr_code_scanner_outlined,
+                                          size: 40,
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'No QR credential allocated for this record.',
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 16),
+                                Text(
+                                  'SIX-DIGIT VERIFICATION CODE',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.onSurfaceVariant,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: colorScheme.primary.withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      SelectableText(
+                                        (reg.registrationCode ?? '------').split('').join('  '),
+                                        style: theme.textTheme.titleLarge?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'monospace',
+                                          letterSpacing: 4.0,
+                                          color: colorScheme.primary,
+                                        ),
+                                      ),
+                                      if (reg.registrationCode != null) ...[
+                                        const SizedBox(width: 8),
+                                        InkWell(
+                                          onTap: () => _copyToClipboard(
+                                            context,
+                                            reg.registrationCode!,
+                                            '6-Digit Code',
+                                          ),
+                                          child: Icon(
+                                            Icons.copy_rounded,
+                                            size: 16,
+                                            color: colorScheme.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
                         // Photographs Card (Using existing Cloudinary URLs)
                         Card(
                           color: colorScheme.surfaceContainerLow,

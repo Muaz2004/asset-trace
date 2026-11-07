@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:aau_pc_verify/core/theme/app_theme.dart';
 import 'package:aau_pc_verify/features/registration/data/registration_repository.dart';
 import 'package:aau_pc_verify/features/registration/domain/registration.dart';
@@ -132,6 +133,52 @@ void main() {
       expect(find.text('Audit & Registration Metadata'), findsOneWidget);
       expect(find.text('Verification Photographs'), findsOneWidget);
       expect(find.text('LENOVO123XYZ'), findsOneWidget);
+    });
+
+    testWidgets(
+        'RegistrationDetailScreen displays QR code and 6-digit code for registered PC',
+        (tester) async {
+      const qrRegistration = Registration(
+        id: 'test-reg-id-888',
+        studentName: 'Abebe Bikila',
+        studentId: 'UGR/8888/14',
+        phoneNumber: '0911888888',
+        pcBrand: 'HP',
+        pcModel: 'EliteBook 840 G7',
+        serialNumber: 'HP840G7XYZ',
+        pcPhotoUrl: 'https://test.com/pc.jpg',
+        studentWithPcPhotoUrl: 'https://test.com/student.jpg',
+        status: 'active',
+        registeredBy: 'officer-test-uid',
+        registeredByName: 'Officer Dawit',
+        qrIdentifier:
+            'AAU-PC-1234567890abcdef1234567890abcdef1234567890abcdef',
+        registrationCode: '582910',
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            registrationRepositoryProvider.overrideWithValue(
+              _MockRegistrationRepository(qrRegistration),
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const RegistrationDetailScreen(
+              registrationId: 'test-reg-id-888',
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Official Verification Pass'), findsOneWidget);
+      expect(find.byType(QrImageView), findsOneWidget);
+      expect(find.text('5  8  2  9  1  0'), findsOneWidget);
+      expect(find.text('6-Digit Code'), findsOneWidget);
+      expect(find.text('582910'), findsOneWidget);
     });
   });
 }

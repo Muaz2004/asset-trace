@@ -237,7 +237,7 @@ class RegistrationRepository {
     });
   }
 
-  /// Updates the lifecycle status of a registration (active, suspended, reported_stolen)
+  /// Updates the lifecycle status of a registration (active, suspended, reported_stolen, archived)
   /// with mandatory staff audit attribution and reasoning.
   Future<void> updateRegistrationStatus({
     required String registrationId,
@@ -246,7 +246,7 @@ class RegistrationRepository {
     required String changedBy,
     String? changedByName,
   }) async {
-    final validStatuses = {'active', 'suspended', 'reported_stolen'};
+    final validStatuses = {'active', 'suspended', 'reported_stolen', 'archived'};
     final normalized = newStatus.trim().toLowerCase();
     if (!validStatuses.contains(normalized)) {
       throw ArgumentError('Invalid registration status: $newStatus');
@@ -264,6 +264,49 @@ class RegistrationRepository {
     await _registrationsCollection.doc(registrationId).update(updateData);
   }
 
+  /// Soft-deletes / archives a registration, removing it from active lists and releasing active serial constraints.
+  Future<void> archiveRegistration({
+    required String registrationId,
+    required String reason,
+    required String archivedBy,
+    String? archivedByName,
+  }) async {
+    final regDoc = await _registrationsCollection.doc(registrationId).get();
+    if (!regDoc.exists) {
+      throw StateError('Registration record "$registrationId" not found.');
+    }
+    final serial =
+        (regDoc.data()?['serialNumber'] as String?)?.trim().toUpperCase();
+
+    final updateData = <String, dynamic>{
+      'status': 'archived',
+      'statusReason': reason.trim(),
+      'statusChangedBy': archivedBy.trim(),
+      if (archivedByName != null && archivedByName.trim().isNotEmpty)
+        'statusChangedByName': archivedByName.trim(),
+      'statusChangedAt': FieldValue.serverTimestamp(),
+      'archivedBy': archivedBy.trim(),
+      if (archivedByName != null && archivedByName.trim().isNotEmpty)
+        'archivedByName': archivedByName.trim(),
+      'archivedAt': FieldValue.serverTimestamp(),
+    };
+
+    await _registrationsCollection.doc(registrationId).update(updateData);
+
+    // Release/mark inactive in active_serials
+    if (serial != null && serial.isNotEmpty) {
+      try {
+        await _activeSerialsCollection.doc(serial).update({
+          'active': false,
+          'archivedAt': FieldValue.serverTimestamp(),
+          'archivedBy': archivedBy.trim(),
+        });
+      } catch (_) {
+        // Doc may not exist or rule prevented active_serials update; primary registration status is already updated
+      }
+    }
+  }
+
   /// Updates permitted editable fields of an existing registration with audit tracking.
   Future<void> updateRegistrationDetails({
     required String registrationId,
@@ -271,14 +314,57 @@ class RegistrationRepository {
     required String phoneNumber,
     required String pcBrand,
     required String pcModel,
+    String? serialNumber,
     required String updatedBy,
     String? updatedByName,
   }) async {
+    final normalizedSerial = serialNumber?.trim().toUpperCase();
+
+    // If serial number is being updated, verify uniqueness
+    if (normalizedSerial != null && normalizedSerial.isNotEmpty) {
+      final regDoc = await _registrationsCollection.doc(registrationId).get();
+      final currentSerial =
+          (regDoc.data()?['serialNumber'] as String?)?.trim().toUpperCase();
+
+      if (currentSerial != normalizedSerial) {
+        final serialDocRef = _activeSerialsCollection.doc(normalizedSerial);
+        final serialSnapshot = await serialDocRef.get();
+        if (serialSnapshot.exists && (serialSnapshot.data()?['active'] == true)) {
+          final existingStudent =
+              serialSnapshot.data()?['studentId'] ?? 'another student';
+          throw DuplicateSerialException(
+            'Computer with serial number "$normalizedSerial" is already actively registered (Student ID: $existingStudent).',
+          );
+        }
+
+        // Set new serial in active_serials and deactivate old serial
+        await serialDocRef.set({
+          'serialNumber': normalizedSerial,
+          'registrationId': registrationId,
+          'studentId': (regDoc.data()?['studentId'] as String?) ?? '',
+          'active': true,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+        if (currentSerial != null && currentSerial.isNotEmpty) {
+          try {
+            await _activeSerialsCollection.doc(currentSerial).update({
+              'active': false,
+              'replacedBy': normalizedSerial,
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+          } catch (_) {}
+        }
+      }
+    }
+
     final updateData = <String, dynamic>{
       'studentName': studentName.trim(),
       'phoneNumber': phoneNumber.trim(),
       'pcBrand': pcBrand.trim(),
       'pcModel': pcModel.trim(),
+      if (normalizedSerial != null && normalizedSerial.isNotEmpty)
+        'serialNumber': normalizedSerial,
       'updatedBy': updatedBy.trim(),
       if (updatedByName != null && updatedByName.trim().isNotEmpty)
         'updatedByName': updatedByName.trim(),
@@ -286,6 +372,122 @@ class RegistrationRepository {
     };
 
     await _registrationsCollection.doc(registrationId).update(updateData);
+  }
+
+  /// Searches registrations in Cloud Firestore across student ID, phone number, student name,
+  /// computer serial number, registration code, and document ID without loading entire collection.
+  Future<List<Registration>> searchRegistrations(
+    String rawQuery, {
+    int limit = 20,
+  }) async {
+    final query = rawQuery.trim();
+    if (query.isEmpty) return const [];
+
+    final upperQuery = query.toUpperCase();
+    final resultsMap = <String, Registration>{};
+
+    Future<void> runSubquery(Query<Map<String, dynamic>> q) async {
+      try {
+        final snap = await q.get();
+        for (final doc in snap.docs) {
+          if (!resultsMap.containsKey(doc.id)) {
+            try {
+              resultsMap[doc.id] = Registration.fromFirestore(doc);
+            } catch (_) {}
+          }
+        }
+      } catch (_) {}
+    }
+
+    final futures = <Future<void>>[];
+
+    // 1. Direct document ID lookup
+    futures.add(() async {
+      try {
+        final doc = await _registrationsCollection.doc(query).get();
+        if (doc.exists && doc.data() != null && !resultsMap.containsKey(doc.id)) {
+          resultsMap[doc.id] = Registration.fromFirestore(doc);
+        }
+      } catch (_) {}
+    }());
+
+    // 2. Exact 6-digit registration code lookup
+    if (query.length == 6 && RegExp(r'^\d{6}$').hasMatch(query)) {
+      futures.add(runSubquery(
+        _registrationsCollection
+            .where('registrationCode', isEqualTo: query)
+            .limit(limit),
+      ));
+    }
+
+    // 3. Student ID search (exact and prefix)
+    futures.add(runSubquery(
+      _registrationsCollection
+          .where('studentId', isEqualTo: upperQuery)
+          .limit(limit),
+    ));
+    futures.add(runSubquery(
+      _registrationsCollection
+          .where('studentId', isGreaterThanOrEqualTo: upperQuery)
+          .where('studentId', isLessThanOrEqualTo: '$upperQuery\uf8ff')
+          .limit(limit),
+    ));
+
+    // 4. Serial number search (exact and prefix)
+    futures.add(runSubquery(
+      _registrationsCollection
+          .where('serialNumber', isEqualTo: upperQuery)
+          .limit(limit),
+    ));
+    futures.add(runSubquery(
+      _registrationsCollection
+          .where('serialNumber', isGreaterThanOrEqualTo: upperQuery)
+          .where('serialNumber', isLessThanOrEqualTo: '$upperQuery\uf8ff')
+          .limit(limit),
+    ));
+
+    // 5. Phone number search (exact and prefix)
+    futures.add(runSubquery(
+      _registrationsCollection
+          .where('phoneNumber', isEqualTo: query)
+          .limit(limit),
+    ));
+    futures.add(runSubquery(
+      _registrationsCollection
+          .where('phoneNumber', isGreaterThanOrEqualTo: query)
+          .where('phoneNumber', isLessThanOrEqualTo: '$query\uf8ff')
+          .limit(limit),
+    ));
+
+    // 6. Student name search (prefix search for raw query and capitalized)
+    futures.add(runSubquery(
+      _registrationsCollection
+          .where('studentName', isGreaterThanOrEqualTo: query)
+          .where('studentName', isLessThanOrEqualTo: '$query\uf8ff')
+          .limit(limit),
+    ));
+    final capitalized = query.isNotEmpty
+        ? query[0].toUpperCase() + (query.length > 1 ? query.substring(1) : '')
+        : query;
+    if (capitalized != query) {
+      futures.add(runSubquery(
+        _registrationsCollection
+            .where('studentName', isGreaterThanOrEqualTo: capitalized)
+            .where('studentName', isLessThanOrEqualTo: '$capitalized\uf8ff')
+            .limit(limit),
+      ));
+    }
+
+    await Future.wait(futures);
+
+    final list = resultsMap.values.toList();
+    list.sort((a, b) {
+      final aDate = a.registeredAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bDate = b.registeredAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bDate.compareTo(aDate);
+    });
+
+    return list.take(limit).toList();
   }
 
   /// Fetches a page of registrations ordered by registeredAt descending for efficient pagination.

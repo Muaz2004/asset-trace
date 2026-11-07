@@ -21,6 +21,7 @@ import '../../features/registration/presentation/screens/edit_registration_scree
 import '../../features/registration/presentation/screens/registration_detail_screen.dart';
 import '../../features/registration/presentation/screens/registration_form_screen.dart';
 import '../../features/registration/presentation/screens/registration_list_screen.dart';
+import '../../features/registration/presentation/screens/registration_search_screen.dart';
 import '../../features/registration/presentation/screens/registration_success_screen.dart';
 import '../../features/verification/presentation/screens/manual_lookup_screen.dart';
 import '../../features/verification/presentation/screens/ownership_verification_screen.dart';
@@ -188,6 +189,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RoutePaths.registrationList,
         name: RouteNames.registrationList,
         builder: (context, state) => const RegistrationListScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.registrationSearch,
+        name: RouteNames.registrationSearch,
+        builder: (context, state) => const RegistrationSearchScreen(),
       ),
       GoRoute(
         path: RoutePaths.registrationDetail,

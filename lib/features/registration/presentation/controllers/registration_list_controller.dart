@@ -89,6 +89,7 @@ final filteredRegistrationsProvider =
       if (filter.searchQuery.isNotEmpty) {
         final query = filter.searchQuery.toLowerCase().trim();
         final matchStudentId = reg.studentId.toLowerCase().contains(query);
+        final matchPhone = reg.phoneNumber.toLowerCase().contains(query);
         final matchSerial = reg.serialNumber.toLowerCase().contains(query);
         final matchStudentName = reg.studentName.toLowerCase().contains(query);
         final matchBrand = reg.pcBrand.toLowerCase().contains(query);
@@ -98,6 +99,7 @@ final filteredRegistrationsProvider =
         final matchId = reg.id.toLowerCase().contains(query);
 
         if (!matchStudentId &&
+            !matchPhone &&
             !matchSerial &&
             !matchStudentName &&
             !matchBrand &&
@@ -116,11 +118,16 @@ final filteredRegistrationsProvider =
           if (!reg.isSuspended) return false;
         } else if (filter.statusFilter == 'reported_stolen') {
           if (!reg.isReportedStolen) return false;
+        } else if (filter.statusFilter == 'archived') {
+          if (!reg.isArchived) return false;
         } else if (filter.statusFilter == 'inactive') {
           if (reg.isActive) return false;
         } else if (reg.status != filter.statusFilter) {
           return false;
         }
+      } else {
+        // By default ('all'), do not show archived registrations in the standard active list
+        if (reg.isArchived) return false;
       }
 
       // Date filter
@@ -148,4 +155,90 @@ final filteredRegistrationsProvider =
     }).toList();
   });
 });
+
+/// State for dedicated targeted registration search in Cloud Firestore.
+class RegistrationSearchState {
+  const RegistrationSearchState({
+    this.query = '',
+    this.isLoading = false,
+    this.results = const [],
+    this.error,
+    this.hasSearched = false,
+  });
+
+  final String query;
+  final bool isLoading;
+  final List<Registration> results;
+  final String? error;
+  final bool hasSearched;
+
+  bool get hasResults => results.isNotEmpty;
+  bool get isEmptyResult => hasSearched && !isLoading && error == null && results.isEmpty;
+  bool get hasError => error != null;
+
+  RegistrationSearchState copyWith({
+    String? query,
+    bool? isLoading,
+    List<Registration>? results,
+    String? error,
+    bool? hasSearched,
+  }) {
+    return RegistrationSearchState(
+      query: query ?? this.query,
+      isLoading: isLoading ?? this.isLoading,
+      results: results ?? this.results,
+      error: error,
+      hasSearched: hasSearched ?? this.hasSearched,
+    );
+  }
+}
+
+class RegistrationSearchNotifier extends Notifier<RegistrationSearchState> {
+  @override
+  RegistrationSearchState build() => const RegistrationSearchState();
+
+  Future<void> search(String query) async {
+    final cleanQuery = query.trim();
+    if (cleanQuery.isEmpty) {
+      state = const RegistrationSearchState();
+      return;
+    }
+
+    state = state.copyWith(
+      query: cleanQuery,
+      isLoading: true,
+      error: null,
+      hasSearched: true,
+    );
+
+    try {
+      final repo = ref.read(registrationRepositoryProvider);
+      final results = await repo.searchRegistrations(cleanQuery);
+      state = state.copyWith(
+        isLoading: false,
+        results: results,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  Future<void> retry() async {
+    if (state.query.isNotEmpty) {
+      await search(state.query);
+    }
+  }
+
+  void clear() {
+    state = const RegistrationSearchState();
+  }
+}
+
+final registrationSearchControllerProvider =
+    NotifierProvider<RegistrationSearchNotifier, RegistrationSearchState>(
+  RegistrationSearchNotifier.new,
+);
 

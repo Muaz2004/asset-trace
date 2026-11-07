@@ -27,6 +27,9 @@ class Registration {
     this.updatedBy,
     this.updatedByName,
     this.updatedAt,
+    this.archivedBy,
+    this.archivedByName,
+    this.archivedAt,
   });
 
   final String id;
@@ -74,16 +77,27 @@ class Registration {
   /// Timestamp of last detail update.
   final DateTime? updatedAt;
 
+  /// Staff UID who archived this registration.
+  final String? archivedBy;
+
+  /// Display name of administrator who archived this registration.
+  final String? archivedByName;
+
+  /// Timestamp when registration was archived.
+  final DateTime? archivedAt;
+
   bool get isActive => status.toLowerCase() == 'active';
   bool get isSuspended => status.toLowerCase() == 'suspended';
   bool get isReportedStolen =>
       status.toLowerCase() == 'reported_stolen' ||
       status.toLowerCase() == 'stolen';
+  bool get isArchived => status.toLowerCase() == 'archived';
 
   String get statusDisplayName {
     if (isActive) return 'Active';
     if (isSuspended) return 'Suspended';
     if (isReportedStolen) return 'Reported Stolen';
+    if (isArchived) return 'Archived';
     return status;
   }
 
@@ -127,6 +141,14 @@ class Registration {
       parsedUpdatedAt = DateTime.tryParse(rawUpdatedAt);
     }
 
+    DateTime? parsedArchivedAt;
+    final rawArchivedAt = data['archivedAt'];
+    if (rawArchivedAt is Timestamp) {
+      parsedArchivedAt = rawArchivedAt.toDate();
+    } else if (rawArchivedAt is String) {
+      parsedArchivedAt = DateTime.tryParse(rawArchivedAt);
+    }
+
     return Registration(
       id: docId,
       studentName: (data['studentName'] as String?)?.trim() ?? '',
@@ -153,6 +175,9 @@ class Registration {
       updatedBy: (data['updatedBy'] as String?)?.trim(),
       updatedByName: (data['updatedByName'] as String?)?.trim(),
       updatedAt: parsedUpdatedAt,
+      archivedBy: (data['archivedBy'] as String?)?.trim(),
+      archivedByName: (data['archivedByName'] as String?)?.trim(),
+      archivedAt: parsedArchivedAt,
     );
   }
 
@@ -197,6 +222,9 @@ class Registration {
       if (updatedBy != null) 'updatedBy': updatedBy,
       if (updatedByName != null) 'updatedByName': updatedByName,
       if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
+      if (archivedBy != null) 'archivedBy': archivedBy,
+      if (archivedByName != null) 'archivedByName': archivedByName,
+      if (archivedAt != null) 'archivedAt': Timestamp.fromDate(archivedAt!),
     };
   }
 
@@ -225,6 +253,9 @@ class Registration {
     String? updatedBy,
     String? updatedByName,
     DateTime? updatedAt,
+    String? archivedBy,
+    String? archivedByName,
+    DateTime? archivedAt,
   }) {
     return Registration(
       id: id ?? this.id,
@@ -251,6 +282,9 @@ class Registration {
       updatedBy: updatedBy ?? this.updatedBy,
       updatedByName: updatedByName ?? this.updatedByName,
       updatedAt: updatedAt ?? this.updatedAt,
+      archivedBy: archivedBy ?? this.archivedBy,
+      archivedByName: archivedByName ?? this.archivedByName,
+      archivedAt: archivedAt ?? this.archivedAt,
     );
   }
 

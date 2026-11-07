@@ -20,6 +20,9 @@ class StaffProfile {
   final bool active;
   final DateTime? createdAt;
 
+  /// Whether this profile is a System Administrator.
+  bool get isAdmin => role == StaffRole.admin;
+
   /// Creates a [StaffProfile] from Firestore document data.
   factory StaffProfile.fromMap(Map<String, dynamic> data, String docId) {
     DateTime? parsedCreatedAt;

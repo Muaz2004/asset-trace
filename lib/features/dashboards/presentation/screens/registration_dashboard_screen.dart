@@ -194,6 +194,27 @@ class RegistrationDashboardScreen extends ConsumerWidget {
                   ),
                 ),
                 child: ListTile(
+                  leading: Icon(Icons.person_search_rounded, color: colorScheme.primary),
+                  title: const Text('Search & Credential Recovery',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: const Text(
+                      'Recover student 6-digit code or QR by ID, name, or phone'),
+                  trailing:
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  onTap: () => context.push(RoutePaths.registrationSearch),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Card(
+                elevation: 0,
+                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: ListTile(
                   leading: Icon(Icons.history_rounded, color: colorScheme.primary),
                   title: const Text('Verification Audit Trail',
                       style: TextStyle(fontWeight: FontWeight.w600)),

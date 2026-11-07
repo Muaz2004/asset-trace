@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/routing/route_paths.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_indicator.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/registration.dart';
 import '../controllers/registration_list_controller.dart';
 
@@ -19,11 +20,18 @@ class RegistrationListScreen extends ConsumerWidget {
     final registrationsAsync = ref.watch(filteredRegistrationsProvider);
     final filterState = ref.watch(registrationFilterProvider);
     final filterNotifier = ref.read(registrationFilterProvider.notifier);
+    final isAdmin =
+        ref.watch(appAuthStateProvider).profile?.isAdmin == true;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Registration Records'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person_search_rounded),
+            tooltip: 'Search & Recover Credentials',
+            onPressed: () => context.push(RoutePaths.registrationSearch),
+          ),
           IconButton(
             icon: const Icon(Icons.add_rounded),
             tooltip: 'Register Computer',
@@ -105,6 +113,15 @@ class RegistrationListScreen extends ConsumerWidget {
                         selected: filterState.statusFilter == 'reported_stolen',
                         onSelected: (_) => filterNotifier.setStatusFilter('reported_stolen'),
                       ),
+                      if (isAdmin) ...[
+                        const SizedBox(width: 6),
+                        ChoiceChip(
+                          label: const Text('Archived'),
+                          selected: filterState.statusFilter == 'archived',
+                          onSelected: (_) =>
+                              filterNotifier.setStatusFilter('archived'),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -237,6 +254,9 @@ class _RegistrationCard extends StatelessWidget {
     } else if (registration.isReportedStolen) {
       badgeBgColor = Colors.red.shade50;
       badgeTextColor = Colors.red.shade800;
+    } else if (registration.isArchived) {
+      badgeBgColor = Colors.grey.shade200;
+      badgeTextColor = Colors.grey.shade800;
     } else {
       badgeBgColor = Colors.amber.shade50;
       badgeTextColor = Colors.amber.shade900;

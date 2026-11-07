@@ -430,6 +430,14 @@ class AdminDashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               _OperationTile(
+                icon: Icons.person_search_rounded,
+                title: 'Search & Credential Recovery',
+                subtitle: 'Look up registrations and recover lost codes/QRs',
+                onTap: () => context.push(RoutePaths.registrationSearch),
+                colorScheme: colorScheme,
+              ),
+              const SizedBox(height: 8),
+              _OperationTile(
                 icon: Icons.app_registration_rounded,
                 title: 'Computer Registration Portal',
                 subtitle: 'Register student laptops and assign identifiers',

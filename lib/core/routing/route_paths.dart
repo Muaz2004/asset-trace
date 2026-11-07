@@ -25,6 +25,7 @@ class RoutePaths {
   static const String registrationForm = '/registration/new';
   static const String registrationSuccess = '/registration/success';
   static const String registrationList = '/registration/list';
+  static const String registrationSearch = '/registration/search';
   static const String registrationDetail = '/registration/detail/:id';
   static const String editRegistration = '/registration/edit/:id';
 
@@ -59,6 +60,7 @@ class RouteNames {
   static const String registrationForm = 'registration-form';
   static const String registrationSuccess = 'registration-success';
   static const String registrationList = 'registration-list';
+  static const String registrationSearch = 'registration-search';
   static const String registrationDetail = 'registration-detail';
   static const String editRegistration = 'edit-registration';
 
