@@ -5,10 +5,13 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/routing/route_paths.dart';
 import '../../../../core/widgets/error_view.dart';
+import '../../../../core/widgets/loading_indicator.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../dashboards/presentation/controllers/dashboard_stats_controller.dart';
 import '../controllers/staff_management_controller.dart';
 
-/// Administrator dashboard providing staff management and system overview.
+/// Administrator dashboard providing comprehensive operational overview, staff management,
+/// and live system metrics from Cloud Firestore.
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
 
@@ -16,8 +19,8 @@ class AdminDashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final staffAsync = ref.watch(allStaffStreamProvider);
     final profileAsync = ref.watch(currentStaffProfileStreamProvider);
+    final statsAsync = ref.watch(adminDashboardStatsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -36,7 +39,7 @@ class AdminDashboardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Welcome header
+              // Welcome Header
               profileAsync.maybeWhen(
                 data: (profile) => Card(
                   color: colorScheme.primaryContainer,
@@ -87,7 +90,7 @@ class AdminDashboardScreen extends ConsumerWidget {
 
               // Staff Management Section
               Text(
-                'Staff Management',
+                'Staff Management & Accountability',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -116,17 +119,31 @@ class AdminDashboardScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 28),
-
-              // System Overview
-              Text(
-                'System Overview',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+              const SizedBox(height: 8),
+              Card(
+                elevation: 0,
+                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: ListTile(
+                  leading: Icon(Icons.insights_rounded, color: colorScheme.primary),
+                  title: const Text('Staff Activity & Accountability',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: const Text(
+                      'Audit individual registrations, verifications & accountability logs'),
+                  trailing:
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  onTap: () => context.push('/admin/staff-activity'),
                 ),
               ),
-              const SizedBox(height: 12),
-              staffAsync.when(
+              const SizedBox(height: 24),
+
+              // Staff Accounts Summary (Driven by allStaffStreamProvider)
+              ref.watch(allStaffStreamProvider).when(
                 data: (staffList) {
                   final totalStaff = staffList.length;
                   final activeStaff = staffList.where((s) => s.active).length;
@@ -195,19 +212,216 @@ class AdminDashboardScreen extends ConsumerWidget {
                     ),
                   );
                 },
-                loading: () => const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(24.0),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                ),
+                loading: () => const SizedBox.shrink(),
                 error: (e, _) => AppErrorView(
                   message: 'Failed to retrieve staff statistics: $e',
                 ),
               ),
               const SizedBox(height: 28),
 
-              // University Operations
+              // Live System Statistics Section
+              statsAsync.when(
+                data: (stats) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Computer Registrations Overview
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Computer Registrations',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () =>
+                                context.push(RoutePaths.registrationList),
+                            child: const Text('Manage Registrations'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Card(
+                        color: colorScheme.surfaceContainerLow,
+                        child: Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _StatItem(
+                                      label: 'Total Registered',
+                                      value: stats.totalRegistrations.toString(),
+                                      icon: Icons.laptop_chromebook_rounded,
+                                      colorScheme: colorScheme,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _StatItem(
+                                      label: 'Active',
+                                      value: stats.activeRegistrations.toString(),
+                                      icon: Icons.check_circle_outline_rounded,
+                                      valueColor: Colors.green.shade700,
+                                      colorScheme: colorScheme,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _StatItem(
+                                      label: 'Suspended',
+                                      value: stats.suspendedRegistrations.toString(),
+                                      icon: Icons.pause_circle_outline_rounded,
+                                      valueColor: stats.suspendedRegistrations > 0
+                                          ? Colors.amber.shade900
+                                          : colorScheme.onSurfaceVariant,
+                                      colorScheme: colorScheme,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _StatItem(
+                                      label: 'Reported Stolen',
+                                      value: stats.reportedStolenRegistrations.toString(),
+                                      icon: Icons.warning_amber_rounded,
+                                      valueColor: stats.reportedStolenRegistrations > 0
+                                          ? colorScheme.error
+                                          : colorScheme.onSurfaceVariant,
+                                      colorScheme: colorScheme,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Verification Activity Overview
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Verification Activity',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () =>
+                                context.push('/verification/history'),
+                            child: const Text('Audit History'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Card(
+                        color: colorScheme.surfaceContainerLow,
+                        child: Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _StatItem(
+                                  label: 'Total Verifications',
+                                  value: stats.totalVerifications.toString(),
+                                  icon: Icons.verified_user_outlined,
+                                  colorScheme: colorScheme,
+                                ),
+                              ),
+                              Expanded(
+                                child: _StatItem(
+                                  label: 'Verified Normal',
+                                  value: stats.verifiedVerifications.toString(),
+                                  icon: Icons.task_alt_rounded,
+                                  valueColor: Colors.green.shade700,
+                                  colorScheme: colorScheme,
+                                ),
+                              ),
+                              Expanded(
+                                child: _StatItem(
+                                  label: 'Flagged / Stolen',
+                                  value: stats.flaggedVerifications.toString(),
+                                  icon: Icons.report_problem_outlined,
+                                  valueColor: stats.flaggedVerifications > 0
+                                      ? colorScheme.error
+                                      : colorScheme.onSurfaceVariant,
+                                  colorScheme: colorScheme,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Staff Accounts Summary
+                      Text(
+                        'Staff Overview',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Card(
+                        color: colorScheme.surfaceContainerLow,
+                        child: Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _StatItem(
+                                  label: 'Total Accounts',
+                                  value: stats.totalStaff.toString(),
+                                  icon: Icons.badge_outlined,
+                                  colorScheme: colorScheme,
+                                ),
+                              ),
+                              Expanded(
+                                child: _StatItem(
+                                  label: 'Active Staff',
+                                  value: stats.activeStaff.toString(),
+                                  icon: Icons.person_outline_rounded,
+                                  valueColor: Colors.green.shade700,
+                                  colorScheme: colorScheme,
+                                ),
+                              ),
+                              Expanded(
+                                child: _StatItem(
+                                  label: 'Inactive',
+                                  value: stats.inactiveStaff.toString(),
+                                  icon: Icons.person_off_outlined,
+                                  valueColor: stats.inactiveStaff > 0
+                                      ? colorScheme.error
+                                      : colorScheme.onSurfaceVariant,
+                                  colorScheme: colorScheme,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+                loading: () => const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: AppLoadingIndicator(
+                      message: 'Retrieving system statistics...',
+                    ),
+                  ),
+                ),
+                error: (e, _) => AppErrorView(
+                  message: 'Failed to retrieve operational metrics: $e',
+                  onRetry: () => ref.refresh(adminDashboardStatsProvider),
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              // Operational Portals (Admin Direct Access)
               Text(
                 'University Operations (Admin Access)',
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -236,6 +450,14 @@ class AdminDashboardScreen extends ConsumerWidget {
                 title: 'Security Checkpoint Portal',
                 subtitle: 'Gate security computer ownership verification',
                 onTap: () => context.push(RoutePaths.securityDashboard),
+                colorScheme: colorScheme,
+              ),
+              const SizedBox(height: 8),
+              _OperationTile(
+                icon: Icons.history_edu_rounded,
+                title: 'Verification History Portal',
+                subtitle: 'Browse complete historical inspection audit logs',
+                onTap: () => context.push('/verification/history'),
                 colorScheme: colorScheme,
               ),
             ],

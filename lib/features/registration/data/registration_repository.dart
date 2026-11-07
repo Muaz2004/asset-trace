@@ -237,12 +237,90 @@ class RegistrationRepository {
     });
   }
 
-  /// Streams all computer registrations ordered by registration date descending.
-  Stream<List<Registration>> watchAllRegistrations() {
-    return _registrationsCollection
+  /// Updates the lifecycle status of a registration (active, suspended, reported_stolen)
+  /// with mandatory staff audit attribution and reasoning.
+  Future<void> updateRegistrationStatus({
+    required String registrationId,
+    required String newStatus,
+    required String reason,
+    required String changedBy,
+    String? changedByName,
+  }) async {
+    final validStatuses = {'active', 'suspended', 'reported_stolen'};
+    final normalized = newStatus.trim().toLowerCase();
+    if (!validStatuses.contains(normalized)) {
+      throw ArgumentError('Invalid registration status: $newStatus');
+    }
+
+    final updateData = <String, dynamic>{
+      'status': normalized,
+      'statusReason': reason.trim(),
+      'statusChangedBy': changedBy.trim(),
+      if (changedByName != null && changedByName.trim().isNotEmpty)
+        'statusChangedByName': changedByName.trim(),
+      'statusChangedAt': FieldValue.serverTimestamp(),
+    };
+
+    await _registrationsCollection.doc(registrationId).update(updateData);
+  }
+
+  /// Updates permitted editable fields of an existing registration with audit tracking.
+  Future<void> updateRegistrationDetails({
+    required String registrationId,
+    required String studentName,
+    required String phoneNumber,
+    required String pcBrand,
+    required String pcModel,
+    required String updatedBy,
+    String? updatedByName,
+  }) async {
+    final updateData = <String, dynamic>{
+      'studentName': studentName.trim(),
+      'phoneNumber': phoneNumber.trim(),
+      'pcBrand': pcBrand.trim(),
+      'pcModel': pcModel.trim(),
+      'updatedBy': updatedBy.trim(),
+      if (updatedByName != null && updatedByName.trim().isNotEmpty)
+        'updatedByName': updatedByName.trim(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    await _registrationsCollection.doc(registrationId).update(updateData);
+  }
+
+  /// Fetches a page of registrations ordered by registeredAt descending for efficient pagination.
+  Future<List<Registration>> getRegistrationsPaginated({
+    int limit = 20,
+    DocumentSnapshot<Map<String, dynamic>>? startAfterDoc,
+  }) async {
+    Query<Map<String, dynamic>> query = _registrationsCollection
         .orderBy('registeredAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
+        .limit(limit);
+
+    if (startAfterDoc != null) {
+      query = query.startAfterDocument(startAfterDoc);
+    }
+
+    final snapshot = await query.get();
+    final list = <Registration>[];
+    for (final doc in snapshot.docs) {
+      try {
+        list.add(Registration.fromFirestore(doc));
+      } catch (_) {
+        // Skip malformed records
+      }
+    }
+    return list;
+  }
+
+  /// Streams all computer registrations ordered by registration date descending.
+  Stream<List<Registration>> watchAllRegistrations({int? limit}) {
+    Query<Map<String, dynamic>> query =
+        _registrationsCollection.orderBy('registeredAt', descending: true);
+    if (limit != null) {
+      query = query.limit(limit);
+    }
+    return query.snapshots().map((snapshot) {
       final list = <Registration>[];
       for (final doc in snapshot.docs) {
         try {

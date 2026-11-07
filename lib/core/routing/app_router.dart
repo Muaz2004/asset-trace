@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/admin/presentation/screens/admin_dashboard_screen.dart';
 import '../../features/admin/presentation/screens/create_staff_screen.dart';
+import '../../features/admin/presentation/screens/staff_activity_screen.dart';
 import '../../features/admin/presentation/screens/staff_detail_screen.dart';
 import '../../features/admin/presentation/screens/staff_list_screen.dart';
 import '../../features/auth/domain/staff_role.dart';
@@ -16,6 +17,7 @@ import '../../features/auth/presentation/screens/profile_screen.dart';
 import '../../features/dashboards/presentation/screens/library_dashboard_screen.dart';
 import '../../features/dashboards/presentation/screens/registration_dashboard_screen.dart';
 import '../../features/dashboards/presentation/screens/security_dashboard_screen.dart';
+import '../../features/registration/presentation/screens/edit_registration_screen.dart';
 import '../../features/registration/presentation/screens/registration_detail_screen.dart';
 import '../../features/registration/presentation/screens/registration_form_screen.dart';
 import '../../features/registration/presentation/screens/registration_list_screen.dart';
@@ -23,7 +25,10 @@ import '../../features/registration/presentation/screens/registration_success_sc
 import '../../features/verification/presentation/screens/manual_lookup_screen.dart';
 import '../../features/verification/presentation/screens/ownership_verification_screen.dart';
 import '../../features/verification/presentation/screens/qr_scanner_screen.dart';
+import '../../features/verification/presentation/screens/verification_detail_screen.dart';
+import '../../features/verification/presentation/screens/verification_history_screen.dart';
 import 'route_paths.dart';
+
 
 /// Listenable that triggers GoRouter redirect re-evaluation whenever auth state changes.
 class AuthRefreshNotifier extends ChangeNotifier {
@@ -192,8 +197,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return RegistrationDetailScreen(registrationId: registrationId);
         },
       ),
+      GoRoute(
+        path: RoutePaths.editRegistration,
+        name: RouteNames.editRegistration,
+        builder: (context, state) {
+          final registrationId = state.pathParameters['id'] ?? '';
+          return EditRegistrationScreen(registrationId: registrationId);
+        },
+      ),
 
-      // Computer Ownership Verification (Phase 4)
+      // Computer Ownership Verification (Phase 4 & 5)
       GoRoute(
         path: RoutePaths.qrScanner,
         name: RouteNames.qrScanner,
@@ -216,8 +229,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
+      GoRoute(
+        path: RoutePaths.verificationHistory,
+        name: RouteNames.verificationHistory,
+        builder: (context, state) => const VerificationHistoryScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.verificationDetail,
+        name: RouteNames.verificationDetail,
+        builder: (context, state) {
+          final logId = state.pathParameters['id'] ?? '';
+          return VerificationDetailScreen(logId: logId);
+        },
+      ),
 
-      // Administrator Staff Management
+      // Administrator Staff Management & Activity
       GoRoute(
         path: RoutePaths.staffList,
         name: RouteNames.staffList,
@@ -235,6 +261,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final staffId = state.pathParameters['id'] ?? '';
           return StaffDetailScreen(staffId: staffId);
         },
+      ),
+      GoRoute(
+        path: RoutePaths.staffActivity,
+        name: RouteNames.staffActivity,
+        builder: (context, state) => const StaffActivityScreen(),
       ),
     ],
   );

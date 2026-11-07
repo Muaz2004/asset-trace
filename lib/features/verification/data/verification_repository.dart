@@ -187,6 +187,32 @@ class VerificationRepository {
     });
   }
 
+  /// Streams all verification logs with an optional limit.
+  Stream<List<VerificationLog>> watchAllVerificationLogs({int limit = 100}) {
+    return _logsCollection
+        .orderBy('timestamp', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((snapshot) {
+      final logs = <VerificationLog>[];
+      for (final doc in snapshot.docs) {
+        try {
+          logs.add(VerificationLog.fromFirestore(doc));
+        } catch (_) {
+          // Skip malformed records
+        }
+      }
+      return logs;
+    });
+  }
+
+  /// Retrieves a single verification log by its document ID.
+  Future<VerificationLog?> getVerificationLog(String id) async {
+    final doc = await _logsCollection.doc(id).get();
+    if (!doc.exists || doc.data() == null) return null;
+    return VerificationLog.fromFirestore(doc);
+  }
+
   /// Streams verification logs for a specific computer registration.
   Stream<List<VerificationLog>> watchLogsForRegistration(String registrationId) {
     return _logsCollection
@@ -223,6 +249,12 @@ final verificationRepositoryProvider = Provider<VerificationRepository>((ref) {
 final recentVerificationLogsStreamProvider =
     StreamProvider.autoDispose<List<VerificationLog>>((ref) {
   return ref.watch(verificationRepositoryProvider).watchRecentVerificationLogs();
+});
+
+/// Stream provider for all verification logs (up to 100 recent for operational views).
+final allVerificationLogsStreamProvider =
+    StreamProvider<List<VerificationLog>>((ref) {
+  return ref.watch(verificationRepositoryProvider).watchAllVerificationLogs();
 });
 
 /// Stream provider for verification logs of a specific registration.

@@ -50,9 +50,10 @@ class RegistrationListScreen extends ConsumerWidget {
               ),
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SearchBar(
-                  hintText: 'Search by Student ID, Serial, or Name...',
+                  hintText: 'Search student, ID, serial, or code...',
                   leading: const Icon(Icons.search_rounded),
                   trailing: [
                     if (filterState.searchQuery.isNotEmpty)
@@ -68,34 +69,84 @@ class RegistrationListScreen extends ConsumerWidget {
                   onChanged: filterNotifier.setSearchQuery,
                 ),
                 const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Text(
-                      'Status: ',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                // Status Filter Chips
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      Text(
+                        'Status: ',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    ChoiceChip(
-                      label: const Text('All'),
-                      selected: filterState.statusFilter == 'all',
-                      onSelected: (_) => filterNotifier.setStatusFilter('all'),
-                    ),
-                    const SizedBox(width: 6),
-                    ChoiceChip(
-                      label: const Text('Active'),
-                      selected: filterState.statusFilter == 'active',
-                      onSelected: (_) => filterNotifier.setStatusFilter('active'),
-                    ),
-                    const SizedBox(width: 6),
-                    ChoiceChip(
-                      label: const Text('Inactive'),
-                      selected: filterState.statusFilter == 'inactive',
-                      onSelected: (_) =>
-                          filterNotifier.setStatusFilter('inactive'),
-                    ),
-                  ],
+                      const SizedBox(width: 6),
+                      ChoiceChip(
+                        label: const Text('All'),
+                        selected: filterState.statusFilter == 'all',
+                        onSelected: (_) => filterNotifier.setStatusFilter('all'),
+                      ),
+                      const SizedBox(width: 6),
+                      ChoiceChip(
+                        label: const Text('Active'),
+                        selected: filterState.statusFilter == 'active',
+                        onSelected: (_) => filterNotifier.setStatusFilter('active'),
+                      ),
+                      const SizedBox(width: 6),
+                      ChoiceChip(
+                        label: const Text('Suspended'),
+                        selected: filterState.statusFilter == 'suspended',
+                        onSelected: (_) => filterNotifier.setStatusFilter('suspended'),
+                      ),
+                      const SizedBox(width: 6),
+                      ChoiceChip(
+                        label: const Text('Reported Stolen'),
+                        selected: filterState.statusFilter == 'reported_stolen',
+                        onSelected: (_) => filterNotifier.setStatusFilter('reported_stolen'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Date Filter Chips
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      Text(
+                        'Date: ',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      ChoiceChip(
+                        label: const Text('All Dates'),
+                        selected: filterState.dateFilter == 'all',
+                        onSelected: (_) => filterNotifier.setDateFilter('all'),
+                      ),
+                      const SizedBox(width: 6),
+                      ChoiceChip(
+                        label: const Text('Today'),
+                        selected: filterState.dateFilter == 'today',
+                        onSelected: (_) => filterNotifier.setDateFilter('today'),
+                      ),
+                      const SizedBox(width: 6),
+                      ChoiceChip(
+                        label: const Text('Last 7 Days'),
+                        selected: filterState.dateFilter == 'this_week',
+                        onSelected: (_) => filterNotifier.setDateFilter('this_week'),
+                      ),
+                      const SizedBox(width: 6),
+                      ChoiceChip(
+                        label: const Text('This Month'),
+                        selected: filterState.dateFilter == 'this_month',
+                        onSelected: (_) => filterNotifier.setDateFilter('this_month'),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -120,7 +171,8 @@ class RegistrationListScreen extends ConsumerWidget {
                           const SizedBox(height: 16),
                           Text(
                             filterState.searchQuery.isNotEmpty ||
-                                    filterState.statusFilter != 'all'
+                                    filterState.statusFilter != 'all' ||
+                                    filterState.dateFilter != 'all'
                                 ? 'No registrations match your search criteria'
                                 : 'No computer registrations recorded yet',
                             style: theme.textTheme.titleMedium?.copyWith(
@@ -177,6 +229,21 @@ class _RegistrationCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    Color badgeBgColor;
+    Color badgeTextColor;
+    if (registration.isActive) {
+      badgeBgColor = Colors.green.shade50;
+      badgeTextColor = Colors.green.shade800;
+    } else if (registration.isReportedStolen) {
+      badgeBgColor = Colors.red.shade50;
+      badgeTextColor = Colors.red.shade800;
+    } else {
+      badgeBgColor = Colors.amber.shade50;
+      badgeTextColor = Colors.amber.shade900;
+    }
+
+    final hasPhoto = registration.pcPhotoUrl.trim().isNotEmpty;
+
     return Card(
       color: colorScheme.surfaceContainerLow,
       child: ListTile(
@@ -184,14 +251,31 @@ class _RegistrationCard extends StatelessWidget {
           horizontal: 16,
           vertical: 8,
         ),
-        leading: CircleAvatar(
-          backgroundColor: colorScheme.primaryContainer,
-          child: Icon(
-            Icons.laptop_mac_rounded,
-            color: colorScheme.primary,
-            size: 20,
-          ),
-        ),
+        leading: hasPhoto
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Image.network(
+                    registration.pcPhotoUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => CircleAvatar(
+                      backgroundColor: colorScheme.primaryContainer,
+                      child: Icon(Icons.laptop_mac_rounded,
+                          color: colorScheme.primary, size: 20),
+                    ),
+                  ),
+                ),
+              )
+            : CircleAvatar(
+                backgroundColor: colorScheme.primaryContainer,
+                child: Icon(
+                  Icons.laptop_mac_rounded,
+                  color: colorScheme.primary,
+                  size: 20,
+                ),
+              ),
         title: Row(
           children: [
             Expanded(
@@ -241,23 +325,28 @@ class _RegistrationCard extends StatelessWidget {
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
+                if (registration.registrationCode != null) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    '• Code: ${registration.registrationCode}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
                 const Spacer(),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: registration.isActive
-                        ? Colors.green.shade50
-                        : colorScheme.errorContainer.withValues(alpha: 0.3),
+                    color: badgeBgColor,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    registration.isActive ? 'Active' : 'Inactive',
+                    registration.statusDisplayName,
                     style: theme.textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: registration.isActive
-                          ? Colors.green.shade800
-                          : colorScheme.error,
+                      color: badgeTextColor,
                     ),
                   ),
                 ),

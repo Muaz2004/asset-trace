@@ -20,6 +20,13 @@ class Registration {
     this.qrIdentifier,
     this.registrationCode,
     this.qrGeneratedAt,
+    this.statusReason,
+    this.statusChangedBy,
+    this.statusChangedByName,
+    this.statusChangedAt,
+    this.updatedBy,
+    this.updatedByName,
+    this.updatedAt,
   });
 
   final String id;
@@ -46,10 +53,45 @@ class Registration {
   /// Timestamp when the QR credential and 6-digit code were allocated.
   final DateTime? qrGeneratedAt;
 
+  /// Reason recorded when status was changed (suspension or reported stolen).
+  final String? statusReason;
+
+  /// Staff UID responsible for the latest status transition.
+  final String? statusChangedBy;
+
+  /// Display name of the staff member responsible for the latest status transition.
+  final String? statusChangedByName;
+
+  /// Timestamp of the latest status transition.
+  final DateTime? statusChangedAt;
+
+  /// Staff UID who last updated registration details.
+  final String? updatedBy;
+
+  /// Display name of staff who last updated registration details.
+  final String? updatedByName;
+
+  /// Timestamp of last detail update.
+  final DateTime? updatedAt;
+
   bool get isActive => status.toLowerCase() == 'active';
+  bool get isSuspended => status.toLowerCase() == 'suspended';
+  bool get isReportedStolen =>
+      status.toLowerCase() == 'reported_stolen' ||
+      status.toLowerCase() == 'stolen';
+
+  String get statusDisplayName {
+    if (isActive) return 'Active';
+    if (isSuspended) return 'Suspended';
+    if (isReportedStolen) return 'Reported Stolen';
+    return status;
+  }
+
   bool get hasQrCredentials =>
-      qrIdentifier != null && qrIdentifier!.isNotEmpty &&
-      registrationCode != null && registrationCode!.isNotEmpty;
+      qrIdentifier != null &&
+      qrIdentifier!.isNotEmpty &&
+      registrationCode != null &&
+      registrationCode!.isNotEmpty;
 
   /// Deserializes a Firestore map into a [Registration] object.
   factory Registration.fromMap(Map<String, dynamic> data, String docId) {
@@ -67,6 +109,22 @@ class Registration {
       parsedQrGeneratedAt = rawQrGeneratedAt.toDate();
     } else if (rawQrGeneratedAt is String) {
       parsedQrGeneratedAt = DateTime.tryParse(rawQrGeneratedAt);
+    }
+
+    DateTime? parsedStatusChangedAt;
+    final rawStatusChangedAt = data['statusChangedAt'] ?? data['statusUpdatedAt'];
+    if (rawStatusChangedAt is Timestamp) {
+      parsedStatusChangedAt = rawStatusChangedAt.toDate();
+    } else if (rawStatusChangedAt is String) {
+      parsedStatusChangedAt = DateTime.tryParse(rawStatusChangedAt);
+    }
+
+    DateTime? parsedUpdatedAt;
+    final rawUpdatedAt = data['updatedAt'];
+    if (rawUpdatedAt is Timestamp) {
+      parsedUpdatedAt = rawUpdatedAt.toDate();
+    } else if (rawUpdatedAt is String) {
+      parsedUpdatedAt = DateTime.tryParse(rawUpdatedAt);
     }
 
     return Registration(
@@ -87,6 +145,14 @@ class Registration {
       qrIdentifier: (data['qrIdentifier'] as String?)?.trim(),
       registrationCode: (data['registrationCode'] as String?)?.trim(),
       qrGeneratedAt: parsedQrGeneratedAt,
+      statusReason: (data['statusReason'] as String?)?.trim(),
+      statusChangedBy: (data['statusChangedBy'] as String?)?.trim() ??
+          (data['lastVerifiedBy'] as String?)?.trim(),
+      statusChangedByName: (data['statusChangedByName'] as String?)?.trim(),
+      statusChangedAt: parsedStatusChangedAt,
+      updatedBy: (data['updatedBy'] as String?)?.trim(),
+      updatedByName: (data['updatedByName'] as String?)?.trim(),
+      updatedAt: parsedUpdatedAt,
     );
   }
 
@@ -122,6 +188,15 @@ class Registration {
       if (registrationCode != null) 'registrationCode': registrationCode,
       if (qrGeneratedAt != null)
         'qrGeneratedAt': Timestamp.fromDate(qrGeneratedAt!),
+      if (statusReason != null) 'statusReason': statusReason,
+      if (statusChangedBy != null) 'statusChangedBy': statusChangedBy,
+      if (statusChangedByName != null)
+        'statusChangedByName': statusChangedByName,
+      if (statusChangedAt != null)
+        'statusChangedAt': Timestamp.fromDate(statusChangedAt!),
+      if (updatedBy != null) 'updatedBy': updatedBy,
+      if (updatedByName != null) 'updatedByName': updatedByName,
+      if (updatedAt != null) 'updatedAt': Timestamp.fromDate(updatedAt!),
     };
   }
 
@@ -143,6 +218,13 @@ class Registration {
     String? qrIdentifier,
     String? registrationCode,
     DateTime? qrGeneratedAt,
+    String? statusReason,
+    String? statusChangedBy,
+    String? statusChangedByName,
+    DateTime? statusChangedAt,
+    String? updatedBy,
+    String? updatedByName,
+    DateTime? updatedAt,
   }) {
     return Registration(
       id: id ?? this.id,
@@ -162,6 +244,13 @@ class Registration {
       qrIdentifier: qrIdentifier ?? this.qrIdentifier,
       registrationCode: registrationCode ?? this.registrationCode,
       qrGeneratedAt: qrGeneratedAt ?? this.qrGeneratedAt,
+      statusReason: statusReason ?? this.statusReason,
+      statusChangedBy: statusChangedBy ?? this.statusChangedBy,
+      statusChangedByName: statusChangedByName ?? this.statusChangedByName,
+      statusChangedAt: statusChangedAt ?? this.statusChangedAt,
+      updatedBy: updatedBy ?? this.updatedBy,
+      updatedByName: updatedByName ?? this.updatedByName,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
@@ -182,7 +271,9 @@ class Registration {
         other.registeredBy == registeredBy &&
         other.registeredAt == registeredAt &&
         other.qrIdentifier == qrIdentifier &&
-        other.registrationCode == registrationCode;
+        other.registrationCode == registrationCode &&
+        other.statusReason == statusReason &&
+        other.statusChangedBy == statusChangedBy;
   }
 
   @override
@@ -201,5 +292,7 @@ class Registration {
         registeredAt,
         qrIdentifier,
         registrationCode,
+        statusReason,
+        statusChangedBy,
       );
 }
