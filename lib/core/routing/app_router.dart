@@ -16,6 +16,10 @@ import '../../features/auth/presentation/screens/profile_screen.dart';
 import '../../features/dashboards/presentation/screens/library_dashboard_screen.dart';
 import '../../features/dashboards/presentation/screens/registration_dashboard_screen.dart';
 import '../../features/dashboards/presentation/screens/security_dashboard_screen.dart';
+import '../../features/registration/presentation/screens/registration_detail_screen.dart';
+import '../../features/registration/presentation/screens/registration_form_screen.dart';
+import '../../features/registration/presentation/screens/registration_list_screen.dart';
+import '../../features/registration/presentation/screens/registration_success_screen.dart';
 import 'route_paths.dart';
 
 /// Listenable that triggers GoRouter redirect re-evaluation whenever auth state changes.
@@ -155,6 +159,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RoutePaths.securityDashboard,
         name: RouteNames.securityDashboard,
         builder: (context, state) => const SecurityDashboardScreen(),
+      ),
+
+      // Computer Registration (Phase 3)
+      GoRoute(
+        path: RoutePaths.registrationForm,
+        name: RouteNames.registrationForm,
+        builder: (context, state) => const RegistrationFormScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.registrationSuccess,
+        name: RouteNames.registrationSuccess,
+        builder: (context, state) => const RegistrationSuccessScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.registrationList,
+        name: RouteNames.registrationList,
+        builder: (context, state) => const RegistrationListScreen(),
+      ),
+      GoRoute(
+        path: RoutePaths.registrationDetail,
+        name: RouteNames.registrationDetail,
+        builder: (context, state) {
+          final registrationId = state.pathParameters['id'] ?? '';
+          return RegistrationDetailScreen(registrationId: registrationId);
+        },
       ),
 
       // Administrator Staff Management

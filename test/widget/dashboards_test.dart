@@ -13,6 +13,7 @@ import 'package:aau_pc_verify/features/auth/presentation/screens/profile_screen.
 import 'package:aau_pc_verify/features/dashboards/presentation/screens/library_dashboard_screen.dart';
 import 'package:aau_pc_verify/features/dashboards/presentation/screens/registration_dashboard_screen.dart';
 import 'package:aau_pc_verify/features/dashboards/presentation/screens/security_dashboard_screen.dart';
+import 'package:aau_pc_verify/features/registration/presentation/controllers/registration_list_controller.dart';
 
 void main() {
   const adminProfile = StaffProfile(
@@ -79,6 +80,9 @@ void main() {
                 ),
               ),
             ),
+            allRegistrationsStreamProvider.overrideWithValue(
+              const AsyncData([]),
+            ),
           ],
           child: MaterialApp(
             theme: AppTheme.lightTheme,
@@ -90,7 +94,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Registration Portal'), findsOneWidget);
-      expect(find.text('Register Student Computer'), findsOneWidget);
+      expect(find.text('Register PC'), findsOneWidget);
       expect(find.text('No Computer Registrations Yet'), findsOneWidget);
     });
 

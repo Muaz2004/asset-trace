@@ -8,6 +8,15 @@ class AppConstants {
 
   // Firestore collection names
   static const String staffCollection = 'staff';
+  static const String registrationsCollection = 'registrations';
+  static const String activeSerialsCollection = 'active_serials';
+
+  // Cloudinary configuration (Unsigned upload)
+  static const String cloudinaryCloudName = 'cyk4nxfd';
+  static const String cloudinaryUploadPreset = 'aau_pc_verify';
+  static const String cloudinaryFolder = 'aau-pc-verify';
+  static const String cloudinaryUploadUrl =
+      'https://api.cloudinary.com/v1_1/$cloudinaryCloudName/image/upload';
 
   // UI Strings
   static const String loginTitle = 'Staff Portal';

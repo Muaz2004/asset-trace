@@ -19,6 +19,12 @@ class RoutePaths {
   static const String staffList = '/admin/staff';
   static const String createStaff = '/admin/staff/new';
   static const String staffDetail = '/admin/staff/:id';
+
+  // Computer Registration (Phase 3)
+  static const String registrationForm = '/registration/new';
+  static const String registrationSuccess = '/registration/success';
+  static const String registrationList = '/registration/list';
+  static const String registrationDetail = '/registration/detail/:id';
 }
 
 class RouteNames {
@@ -38,4 +44,10 @@ class RouteNames {
   static const String staffList = 'staff-list';
   static const String createStaff = 'create-staff';
   static const String staffDetail = 'staff-detail';
+
+  // Computer Registration (Phase 3)
+  static const String registrationForm = 'registration-form';
+  static const String registrationSuccess = 'registration-success';
+  static const String registrationList = 'registration-list';
+  static const String registrationDetail = 'registration-detail';
 }
