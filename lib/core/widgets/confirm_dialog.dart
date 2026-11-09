@@ -17,7 +17,9 @@ Future<bool> showConfirmDialog({
 
       return AlertDialog(
         title: Text(title),
-        content: Text(message),
+        content: SingleChildScrollView(
+          child: Text(message),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),

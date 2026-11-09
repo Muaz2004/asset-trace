@@ -195,42 +195,49 @@ class _ManualLookupScreenState extends ConsumerState<ManualLookupScreen> {
                   ),
                   const SizedBox(height: 32),
 
-                  // 6 Digit Display Boxes
                   GestureDetector(
                     onTap: () => _focusNode.requestFocus(),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: List.generate(6, (index) {
-                        final hasChar = index < currentCode.length;
-                        final isFocused = index == currentCode.length && _focusNode.hasFocus;
-                        final char = hasChar ? currentCode[index] : '';
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final availableWidth = constraints.maxWidth;
+                        final boxWidth = ((availableWidth - (5 * 8)) / 6).clamp(36.0, 50.0);
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: List.generate(6, (index) {
+                            final hasChar = index < currentCode.length;
+                            final isFocused =
+                                index == currentCode.length && _focusNode.hasFocus;
+                            final char = hasChar ? currentCode[index] : '';
 
-                        return Container(
-                          width: 48,
-                          height: 56,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isFocused
-                                  ? colorScheme.primary
-                                  : hasChar
-                                      ? colorScheme.outline
-                                      : colorScheme.outlineVariant,
-                              width: isFocused ? 2 : 1,
-                            ),
-                          ),
-                          child: Text(
-                            char,
-                            style: const TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                            return Container(
+                              width: boxWidth,
+                              height: boxWidth * 1.2,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: isFocused
+                                      ? colorScheme.primary
+                                      : hasChar
+                                          ? colorScheme.primary.withValues(alpha: 0.6)
+                                          : colorScheme.outlineVariant,
+                                  width: isFocused ? 2 : 1,
+                                ),
+                              ),
+                              child: Text(
+                                char,
+                                style: TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: boxWidth * 0.48,
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.primary,
+                                ),
+                              ),
+                            );
+                          }),
                         );
-                      }),
+                      },
                     ),
                   ),
 
@@ -291,7 +298,7 @@ class _ManualLookupScreenState extends ConsumerState<ManualLookupScreen> {
                       child: Text(
                         'Security lockout: Retry in $_cooldownRemaining seconds',
                         style: TextStyle(
-                          color: Colors.orange.shade800,
+                          color: colorScheme.primary,
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
@@ -305,12 +312,12 @@ class _ManualLookupScreenState extends ConsumerState<ManualLookupScreen> {
                   FilledButton.icon(
                     onPressed: isReadyToSubmit ? _submitLookup : null,
                     icon: _isLoading
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: colorScheme.onPrimary,
                             ),
                           )
                         : const Icon(Icons.search_rounded),

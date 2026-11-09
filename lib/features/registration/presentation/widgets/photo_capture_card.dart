@@ -80,7 +80,7 @@ class PhotoCaptureCard extends StatelessWidget {
                 if (hasImage)
                   Icon(
                     Icons.check_circle_rounded,
-                    color: Colors.green.shade700,
+                    color: colorScheme.primary,
                     size: 20,
                   ),
               ],

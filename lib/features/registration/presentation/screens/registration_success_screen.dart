@@ -161,13 +161,13 @@ class RegistrationSuccessScreen extends ConsumerWidget {
                         width: 72,
                         height: 72,
                         decoration: BoxDecoration(
-                          color: Colors.green.shade50,
+                          color: colorScheme.primaryContainer,
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.check_circle_rounded,
                           size: 46,
-                          color: Colors.green.shade700,
+                          color: colorScheme.primary,
                         ),
                       ),
                     ),
@@ -317,7 +317,7 @@ class RegistrationSuccessScreen extends ConsumerWidget {
                               _InfoItem(
                                 label: 'Status',
                                 value: 'Active Ownership Record',
-                                valueColor: Colors.green.shade800,
+                                valueColor: colorScheme.primary,
                               ),
                             ],
                           ),

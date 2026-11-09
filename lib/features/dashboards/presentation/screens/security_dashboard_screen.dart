@@ -124,7 +124,7 @@ class SecurityDashboardScreen extends ConsumerWidget {
                                   label: 'Verified Normal',
                                   value: stats.verifiedCount.toString(),
                                   icon: Icons.check_circle_outline_rounded,
-                                  valueColor: Colors.green.shade700,
+                                  valueColor: colorScheme.primary,
                                   colorScheme: colorScheme,
                                 ),
                               ),

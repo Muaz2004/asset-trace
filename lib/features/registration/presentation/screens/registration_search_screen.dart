@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_indicator.dart';
 import '../../domain/registration.dart';
@@ -345,17 +346,17 @@ class _SearchResultCard extends StatelessWidget {
     final isSuspended = registration.isSuspended;
     final isArchived = registration.isArchived;
 
-    Color badgeBg = Colors.green.shade50;
-    Color badgeColor = Colors.green.shade800;
+    Color badgeBg = colorScheme.primaryContainer;
+    Color badgeColor = colorScheme.primary;
     if (isStolen) {
-      badgeBg = Colors.red.shade50;
-      badgeColor = Colors.red.shade800;
+      badgeBg = AppTheme.statusWarningSurface;
+      badgeColor = AppTheme.statusWarning;
     } else if (isSuspended) {
-      badgeBg = Colors.amber.shade50;
-      badgeColor = Colors.amber.shade900;
+      badgeBg = colorScheme.surfaceContainerHighest;
+      badgeColor = colorScheme.primary;
     } else if (isArchived) {
-      badgeBg = Colors.grey.shade200;
-      badgeColor = Colors.grey.shade800;
+      badgeBg = colorScheme.surfaceContainerHighest;
+      badgeColor = colorScheme.onSurfaceVariant;
     }
 
     return Card(
@@ -365,7 +366,7 @@ class _SearchResultCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
           color: isStolen
-              ? Colors.red.shade300
+              ? AppTheme.statusWarning
               : colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),

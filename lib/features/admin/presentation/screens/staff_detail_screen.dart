@@ -297,11 +297,11 @@ class StaffDetailScreen extends ConsumerWidget {
                                         Chip(
                                           label: Text(staff.active ? 'Active' : 'Inactive'),
                                           backgroundColor: staff.active
-                                              ? Colors.green.shade50
+                                              ? colorScheme.primaryContainer
                                               : colorScheme.errorContainer.withValues(alpha: 0.3),
                                           labelStyle: TextStyle(
                                             color: staff.active
-                                                ? Colors.green.shade800
+                                                ? colorScheme.primary
                                                 : colorScheme.error,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -342,7 +342,7 @@ class StaffDetailScreen extends ConsumerWidget {
                                 label: 'Status',
                                 value: staff.active ? 'Active (Permitted)' : 'Inactive (Deactivated)',
                                 valueColor: staff.active
-                                    ? Colors.green.shade700
+                                    ? colorScheme.primary
                                     : colorScheme.error,
                               ),
                               if (staff.createdAt != null) ...[
@@ -389,8 +389,8 @@ class StaffDetailScreen extends ConsumerWidget {
                           staff.active ? 'Deactivate Staff Account' : 'Activate Staff Account',
                         ),
                         style: FilledButton.styleFrom(
-                          backgroundColor: staff.active ? colorScheme.error : Colors.green.shade700,
-                          foregroundColor: Colors.white,
+                          backgroundColor: staff.active ? colorScheme.error : colorScheme.primary,
+                          foregroundColor: staff.active ? Colors.white : colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                       ),

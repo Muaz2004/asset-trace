@@ -232,7 +232,7 @@ class _StaffActivityCard extends StatelessWidget {
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: profile.active
-                          ? Colors.green.shade50
+                          ? colorScheme.primaryContainer
                           : colorScheme.errorContainer.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(6),
                     ),
@@ -241,7 +241,7 @@ class _StaffActivityCard extends StatelessWidget {
                       style: theme.textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: profile.active
-                            ? Colors.green.shade800
+                            ? colorScheme.primary
                             : colorScheme.error,
                       ),
                     ),

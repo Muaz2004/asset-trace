@@ -96,7 +96,6 @@ class _EditRegistrationScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Registration information updated successfully.'),
-          backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
         ),
       );

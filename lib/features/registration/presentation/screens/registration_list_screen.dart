@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/route_paths.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_indicator.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
@@ -249,17 +250,17 @@ class _RegistrationCard extends StatelessWidget {
     Color badgeBgColor;
     Color badgeTextColor;
     if (registration.isActive) {
-      badgeBgColor = Colors.green.shade50;
-      badgeTextColor = Colors.green.shade800;
+      badgeBgColor = colorScheme.primaryContainer;
+      badgeTextColor = colorScheme.primary;
     } else if (registration.isReportedStolen) {
-      badgeBgColor = Colors.red.shade50;
-      badgeTextColor = Colors.red.shade800;
+      badgeBgColor = AppTheme.statusWarningSurface;
+      badgeTextColor = AppTheme.statusWarning;
     } else if (registration.isArchived) {
-      badgeBgColor = Colors.grey.shade200;
-      badgeTextColor = Colors.grey.shade800;
+      badgeBgColor = colorScheme.surfaceContainerHighest;
+      badgeTextColor = colorScheme.onSurfaceVariant;
     } else {
-      badgeBgColor = Colors.amber.shade50;
-      badgeTextColor = Colors.amber.shade900;
+      badgeBgColor = colorScheme.surfaceContainerHighest;
+      badgeTextColor = colorScheme.primary;
     }
 
     final hasPhoto = registration.pcPhotoUrl.trim().isNotEmpty;

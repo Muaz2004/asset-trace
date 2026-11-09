@@ -267,7 +267,7 @@ class _StaffCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: staff.active
-                        ? Colors.green.shade50
+                        ? colorScheme.primaryContainer
                         : colorScheme.errorContainer.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(6),
                   ),
@@ -276,7 +276,7 @@ class _StaffCard extends StatelessWidget {
                     style: theme.textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: staff.active
-                          ? Colors.green.shade800
+                          ? colorScheme.primary
                           : colorScheme.error,
                     ),
                   ),

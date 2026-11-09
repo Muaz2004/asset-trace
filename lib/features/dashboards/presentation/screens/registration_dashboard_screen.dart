@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/routing/route_paths.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_indicator.dart';
@@ -128,7 +129,7 @@ class RegistrationDashboardScreen extends ConsumerWidget {
                                   label: 'My Active PCs',
                                   value: stats.myActiveRegistrations.toString(),
                                   icon: Icons.check_circle_outline_rounded,
-                                  valueColor: Colors.green.shade700,
+                                  valueColor: colorScheme.primary,
                                   colorScheme: colorScheme,
                                 ),
                               ),
@@ -437,14 +438,14 @@ class _RecentRegistrationTile extends StatelessWidget {
     Color badgeBg;
     Color badgeText;
     if (registration.isActive) {
-      badgeBg = Colors.green.shade50;
-      badgeText = Colors.green.shade800;
+      badgeBg = colorScheme.primaryContainer;
+      badgeText = colorScheme.primary;
     } else if (registration.isReportedStolen) {
-      badgeBg = Colors.red.shade50;
-      badgeText = Colors.red.shade800;
+      badgeBg = AppTheme.statusWarningSurface;
+      badgeText = AppTheme.statusWarning;
     } else {
-      badgeBg = Colors.amber.shade50;
-      badgeText = Colors.amber.shade900;
+      badgeBg = colorScheme.surfaceContainerHighest;
+      badgeText = colorScheme.onSurfaceVariant;
     }
 
     return Card(

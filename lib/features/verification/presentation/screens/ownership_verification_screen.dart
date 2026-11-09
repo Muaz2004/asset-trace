@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/routing/route_paths.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_indicator.dart';
 import '../../../auth/domain/staff_role.dart';
@@ -210,7 +211,7 @@ class _OwnershipVerificationScreenState
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.search_off_rounded, size: 64, color: Colors.orange),
+                    Icon(Icons.search_off_rounded, size: 64, color: colorScheme.primary),
                     const SizedBox(height: 16),
                     Text(
                       'Registration Record Not Found',
@@ -251,13 +252,13 @@ class _OwnershipVerificationScreenState
                           margin: const EdgeInsets.only(bottom: 20),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.red.shade50,
+                            color: AppTheme.statusWarningSurface,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.red.shade300, width: 2),
+                            border: Border.all(color: AppTheme.statusWarning, width: 2),
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.warning_rounded, color: Colors.red.shade800, size: 36),
+                              const Icon(Icons.warning_rounded, color: AppTheme.statusWarning, size: 36),
                               const SizedBox(width: 14),
                               Expanded(
                                 child: Column(
@@ -265,8 +266,8 @@ class _OwnershipVerificationScreenState
                                   children: [
                                     Text(
                                       'REGISTRATION STATUS: ${registration.status.toUpperCase()}',
-                                      style: TextStyle(
-                                        color: Colors.red.shade900,
+                                      style: const TextStyle(
+                                        color: AppTheme.statusWarning,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16,
                                       ),
@@ -275,7 +276,7 @@ class _OwnershipVerificationScreenState
                                     Text(
                                       'Alert: This computer is flagged as ${registration.status}. Campus security protocol must be initiated.',
                                       style: TextStyle(
-                                        color: Colors.red.shade900,
+                                        color: colorScheme.onSurface,
                                         fontSize: 13,
                                       ),
                                     ),
@@ -357,16 +358,16 @@ class _OwnershipVerificationScreenState
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: registration.isActive
-                                          ? Colors.green.shade100
-                                          : Colors.red.shade100,
+                                          ? colorScheme.primaryContainer
+                                          : AppTheme.statusWarningSurface,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
                                       registration.status.toUpperCase(),
                                       style: TextStyle(
                                         color: registration.isActive
-                                          ? Colors.green.shade800
-                                          : Colors.red.shade800,
+                                          ? colorScheme.primary
+                                          : AppTheme.statusWarning,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 12,
                                       ),
@@ -384,10 +385,11 @@ class _OwnershipVerificationScreenState
                                         Text('6-Digit Code', style: theme.textTheme.bodySmall),
                                         Text(
                                           registration.registrationCode ?? 'None',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontFamily: 'monospace',
                                             fontWeight: FontWeight.bold,
                                             fontSize: 16,
+                                            color: colorScheme.primary,
                                           ),
                                         ),
                                       ],
@@ -604,7 +606,7 @@ class _OwnershipVerificationScreenState
                 : null,
             child: Container(
               height: 220,
-              color: Colors.grey.shade100,
+              color: colorScheme.surfaceContainerHighest,
               child: registration.studentWithPcPhotoUrl.isNotEmpty
                   ? Stack(
                       fit: StackFit.expand,
@@ -616,13 +618,13 @@ class _OwnershipVerificationScreenState
                             if (progress == null) return child;
                             return const Center(child: CircularProgressIndicator());
                           },
-                          errorBuilder: (context, error, stackTrace) => const Center(
+                          errorBuilder: (context, error, stackTrace) => Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.broken_image_rounded, size: 40, color: Colors.grey),
-                                SizedBox(height: 4),
-                                Text('Photo unavailable', style: TextStyle(color: Colors.grey)),
+                                Icon(Icons.broken_image_rounded, size: 40, color: colorScheme.onSurfaceVariant),
+                                const SizedBox(height: 4),
+                                Text('Photo unavailable', style: TextStyle(color: colorScheme.onSurfaceVariant)),
                               ],
                             ),
                           ),
@@ -736,7 +738,7 @@ class _OwnershipVerificationScreenState
                 : null,
             child: Container(
               height: 220,
-              color: Colors.grey.shade100,
+              color: colorScheme.surfaceContainerHighest,
               child: registration.pcPhotoUrl.isNotEmpty
                   ? Stack(
                       fit: StackFit.expand,
@@ -748,13 +750,13 @@ class _OwnershipVerificationScreenState
                             if (progress == null) return child;
                             return const Center(child: CircularProgressIndicator());
                           },
-                          errorBuilder: (context, error, stackTrace) => const Center(
+                          errorBuilder: (context, error, stackTrace) => Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.broken_image_rounded, size: 40, color: Colors.grey),
-                                SizedBox(height: 4),
-                                Text('Photo unavailable', style: TextStyle(color: Colors.grey)),
+                                Icon(Icons.broken_image_rounded, size: 40, color: colorScheme.onSurfaceVariant),
+                                const SizedBox(height: 4),
+                                Text('Photo unavailable', style: TextStyle(color: colorScheme.onSurfaceVariant)),
                               ],
                             ),
                           ),

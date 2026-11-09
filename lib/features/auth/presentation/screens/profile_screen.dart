@@ -126,7 +126,7 @@ class ProfileScreen extends ConsumerWidget {
                                 label: 'Account Status',
                                 value: profile.active ? 'Active' : 'Inactive',
                                 valueColor: profile.active
-                                    ? Colors.green.shade700
+                                    ? colorScheme.primary
                                     : colorScheme.error,
                               ),
                               const SizedBox(height: 12),

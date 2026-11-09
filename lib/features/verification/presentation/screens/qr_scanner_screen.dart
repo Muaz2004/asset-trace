@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../core/routing/route_paths.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../data/verification_repository.dart';
 
 /// Screen performing real camera-based QR code scanning and backend lookup for computer ownership verification.
@@ -119,7 +120,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
-        icon: const Icon(Icons.search_off_rounded, size: 48, color: Colors.orange),
+        icon: Icon(Icons.search_off_rounded, size: 48, color: Theme.of(context).colorScheme.primary),
         title: const Text('Unrecognized QR Pass'),
         content: const Text(
           'No active university computer registration matches this QR credential. The computer may not be registered, or the QR code may belong to an external system.',
@@ -183,10 +184,10 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.videocam_off_rounded,
                         size: 56,
-                        color: Colors.redAccent,
+                        color: colorScheme.error,
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -296,8 +297,8 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen>
                 icon: const Icon(Icons.dialpad_rounded, size: 20),
                 label: const Text('Enter 6-Digit Code Manually'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black87,
+                  backgroundColor: AppTheme.aauGold,
+                  foregroundColor: AppTheme.deepTrustNavy,
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
@@ -330,8 +331,8 @@ class _ScannerOverlayPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final backgroundPaint = Paint()..color = overlayColor;
     final borderPaint = Paint()
-      ..color = borderColor
-      ..strokeWidth = 3.5
+      ..color = AppTheme.aauGold
+      ..strokeWidth = 4.0
       ..style = PaintingStyle.stroke;
 
     final left = (size.width - scanBoxSize) / 2;

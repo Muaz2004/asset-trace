@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/loading_indicator.dart';
 import '../../../auth/domain/staff_role.dart';
@@ -134,7 +135,7 @@ class RegistrationDetailScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: AppTheme.aauGold, width: 2),
                 ),
                 child: QrImageView(
                   data: qrData,
@@ -214,7 +215,9 @@ class RegistrationDetailScreen extends ConsumerWidget {
                     isSuspendedOrStolen
                         ? Icons.check_circle_rounded
                         : Icons.warning_rounded,
-                    color: isSuspendedOrStolen ? Colors.green : Colors.amber.shade800,
+                    color: isSuspendedOrStolen
+                        ? Theme.of(context).colorScheme.primary
+                        : AppTheme.statusWarning,
                   ),
                   const SizedBox(width: 8),
                   Text(isSuspendedOrStolen
@@ -259,8 +262,8 @@ class RegistrationDetailScreen extends ConsumerWidget {
                         style: TextStyle(
                           fontSize: 12,
                           color: selectedStatus == 'reported_stolen'
-                              ? Colors.red.shade800
-                              : Colors.amber.shade900,
+                              ? AppTheme.statusWarning
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ] else ...[
@@ -297,8 +300,11 @@ class RegistrationDetailScreen extends ConsumerWidget {
                 FilledButton(
                   style: FilledButton.styleFrom(
                     backgroundColor: selectedStatus == 'reported_stolen'
-                        ? Colors.red
-                        : (selectedStatus == 'suspended' ? Colors.amber.shade800 : Colors.green),
+                        ? AppTheme.statusWarning
+                        : Theme.of(context).colorScheme.primary,
+                    foregroundColor: selectedStatus == 'reported_stolen'
+                        ? Colors.white
+                        : AppTheme.deepTrustNavy,
                   ),
                   onPressed: isSubmitting
                       ? null
@@ -335,9 +341,9 @@ class RegistrationDetailScreen extends ConsumerWidget {
                                         ? 'Registration reactivated successfully.'
                                         : 'Registration marked as ${selectedStatus.replaceAll('_', ' ')}.',
                                   ),
-                                  backgroundColor: selectedStatus == 'active'
-                                      ? Colors.green
-                                      : Colors.orange.shade800,
+                                  backgroundColor: selectedStatus == 'reported_stolen'
+                                      ? AppTheme.statusWarning
+                                      : Theme.of(context).colorScheme.surfaceContainerHigh,
                                 ),
                               );
                             }
@@ -372,7 +378,9 @@ class RegistrationDetailScreen extends ConsumerWidget {
   void _showArchiveDialog(BuildContext context, WidgetRef ref, Registration reg) {
     final authState = ref.read(appAuthStateProvider);
     final profile = authState.profile;
-    if (profile == null || !profile.isAdmin) return;
+    final canManage = profile?.role == StaffRole.admin ||
+        profile?.role == StaffRole.registrationOfficer;
+    if (profile == null || !canManage) return;
 
     showDialog(
       context: context,
@@ -384,11 +392,12 @@ class RegistrationDetailScreen extends ConsumerWidget {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: Row(
+              title: const Row(
                 children: [
-                  Icon(Icons.archive_rounded, color: Colors.blueGrey.shade700),
-                  const SizedBox(width: 8),
-                  const Text('Archive Registration'),
+                  Icon(Icons.delete_outline_rounded,
+                      color: AppTheme.statusWarning),
+                  SizedBox(width: 8),
+                  Text('Delete / Remove Registration'),
                 ],
               ),
               content: SingleChildScrollView(
@@ -399,22 +408,22 @@ class RegistrationDetailScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.amber.shade50,
+                        color: Theme.of(context).colorScheme.surfaceContainerHigh,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.amber.shade300),
+                        border: Border.all(
+                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4)),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Icon(Icons.warning_amber_rounded,
-                              color: Colors.amber.shade900, size: 20),
+                              color: Theme.of(context).colorScheme.primary, size: 20),
                           const SizedBox(width: 8),
-                          Expanded(
+                          const Expanded(
                             child: Text(
                               'Archiving safely soft-deletes this registration. The serial number will be freed for future registrations, checkpoint access will be revoked, but the audit history and images remain preserved.',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.amber.shade900,
                               ),
                             ),
                           ),
@@ -428,7 +437,10 @@ class RegistrationDetailScreen extends ConsumerWidget {
                     ),
                     Text(
                       'PC: ${reg.pcBrand} ${reg.pcModel} (${reg.serialNumber})',
-                      style: const TextStyle(fontSize: 12, color: Colors.black87),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     TextField(
@@ -454,7 +466,8 @@ class RegistrationDetailScreen extends ConsumerWidget {
                 ),
                 FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: Colors.blueGrey.shade800,
+                    backgroundColor: AppTheme.statusWarning,
+                    foregroundColor: Colors.white,
                   ),
                   onPressed: isSubmitting
                       ? null
@@ -483,16 +496,18 @@ class RegistrationDetailScreen extends ConsumerWidget {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Registration archived successfully.'),
-                                  backgroundColor: Colors.blueGrey,
+                                  content: Text('Registration removed successfully.'),
                                   behavior: SnackBarBehavior.floating,
                                 ),
                               );
+                              if (context.canPop()) {
+                                context.pop();
+                              }
                             }
                           } catch (e) {
                             setState(() {
                               isSubmitting = false;
-                              errorMessage = 'Archiving failed: $e';
+                              errorMessage = 'Removal failed: $e';
                             });
                           }
                         },
@@ -505,7 +520,7 @@ class RegistrationDetailScreen extends ConsumerWidget {
                             color: Colors.white,
                           ),
                         )
-                      : const Text('Confirm Archive'),
+                      : const Text('Confirm Removal'),
                 ),
               ],
             );
@@ -523,7 +538,6 @@ class RegistrationDetailScreen extends ConsumerWidget {
         ref.watch(registrationRepositoryProvider).watchRegistration(registrationId);
     final authProfile = ref.watch(appAuthStateProvider).profile;
     final currentRole = authProfile?.role;
-    final isAdmin = authProfile?.isAdmin ?? false;
     final canManage =
         currentRole == StaffRole.admin || currentRole == StaffRole.registrationOfficer;
 
@@ -534,9 +548,27 @@ class RegistrationDetailScreen extends ConsumerWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Registration Details'),
+            title: const Text(
+              'Registration Details',
+              overflow: TextOverflow.ellipsis,
+            ),
             actions: [
-              if (reg != null && canManage)
+              if (reg != null && canManage) ...[
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: 'Edit Registration',
+                  onPressed: () {
+                    context.push('/registration/edit/${reg.id}');
+                  },
+                ),
+                if (!reg.isArchived)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline_rounded),
+                    tooltip: 'Delete / Remove Registration',
+                    onPressed: () {
+                      _showArchiveDialog(context, ref, reg);
+                    },
+                  ),
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert_rounded),
                   tooltip: 'Management Options',
@@ -565,7 +597,9 @@ class RegistrationDetailScreen extends ConsumerWidget {
                           reg.isActive
                               ? Icons.block_flipped
                               : Icons.check_circle_outline,
-                          color: reg.isActive ? Colors.red : Colors.green,
+                          color: reg.isActive
+                              ? AppTheme.statusWarning
+                              : Theme.of(context).colorScheme.primary,
                         ),
                         title: Text(
                           reg.isActive
@@ -575,17 +609,19 @@ class RegistrationDetailScreen extends ConsumerWidget {
                         contentPadding: EdgeInsets.zero,
                       ),
                     ),
-                    if (isAdmin && !reg.isArchived)
-                      const PopupMenuItem(
+                    if (!reg.isArchived)
+                      PopupMenuItem(
                         value: 'archive',
                         child: ListTile(
-                          leading: Icon(Icons.archive_outlined, color: Colors.blueGrey),
-                          title: Text('Archive & Remove (Admin)'),
+                          leading: const Icon(Icons.delete_outline_rounded,
+                              color: AppTheme.statusWarning),
+                          title: const Text('Delete / Remove'),
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
                   ],
                 ),
+              ],
             ],
           ),
           body: () {
@@ -624,23 +660,28 @@ class RegistrationDetailScreen extends ConsumerWidget {
                         // Sensitive Status Warning Banners
                         if (reg.isArchived) ...[
                           Card(
-                            color: Colors.blueGrey.shade800,
+                            color: colorScheme.surfaceContainerHigh,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(
+                                  color: colorScheme.outlineVariant),
+                            ),
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.archive_rounded,
-                                      color: Colors.white, size: 36),
+                                  Icon(Icons.archive_rounded,
+                                      color: colorScheme.onSurfaceVariant, size: 36),
                                   const SizedBox(width: 14),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        const Text(
+                                        Text(
                                           'ARCHIVED REGISTRATION',
                                           style: TextStyle(
-                                            color: Colors.white,
+                                            color: colorScheme.onSurface,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 15,
                                             letterSpacing: 0.5,
@@ -651,8 +692,8 @@ class RegistrationDetailScreen extends ConsumerWidget {
                                           const SizedBox(height: 4),
                                           Text(
                                             'Reason: ${reg.statusReason}',
-                                            style: const TextStyle(
-                                                color: Colors.white70,
+                                            style: TextStyle(
+                                                color: colorScheme.onSurfaceVariant,
                                                 fontSize: 13),
                                           ),
                                         ],
@@ -661,8 +702,8 @@ class RegistrationDetailScreen extends ConsumerWidget {
                                           const SizedBox(height: 2),
                                           Text(
                                             'Archived by: ${reg.archivedByName ?? reg.statusChangedByName}',
-                                            style: const TextStyle(
-                                                color: Colors.white60,
+                                            style: TextStyle(
+                                                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                                                 fontSize: 11),
                                           ),
                                         ],
@@ -676,13 +717,18 @@ class RegistrationDetailScreen extends ConsumerWidget {
                           const SizedBox(height: 16),
                         ] else if (reg.isReportedStolen) ...[
                           Card(
-                            color: Colors.red.shade900,
+                            color: AppTheme.statusWarningSurface,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: const BorderSide(
+                                  color: AppTheme.statusWarning, width: 1.5),
+                            ),
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: Row(
                                 children: [
                                   const Icon(Icons.warning_amber_rounded,
-                                      color: Colors.white, size: 36),
+                                      color: AppTheme.statusWarning, size: 36),
                                   const SizedBox(width: 14),
                                   Expanded(
                                     child: Column(
@@ -692,7 +738,7 @@ class RegistrationDetailScreen extends ConsumerWidget {
                                         const Text(
                                           'REPORTED STOLEN COMPUTER',
                                           style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppTheme.statusWarning,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 15,
                                             letterSpacing: 0.5,
@@ -726,23 +772,28 @@ class RegistrationDetailScreen extends ConsumerWidget {
                           const SizedBox(height: 16),
                         ] else if (reg.isSuspended) ...[
                           Card(
-                            color: Colors.amber.shade900,
+                            color: colorScheme.surfaceContainerHigh,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(
+                                  color: colorScheme.primary, width: 1.5),
+                            ),
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.pause_circle_filled_rounded,
-                                      color: Colors.white, size: 36),
+                                  Icon(Icons.pause_circle_filled_rounded,
+                                      color: colorScheme.primary, size: 36),
                                   const SizedBox(width: 14),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        const Text(
+                                        Text(
                                           'REGISTRATION SUSPENDED',
                                           style: TextStyle(
-                                            color: Colors.white,
+                                            color: colorScheme.primary,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 15,
                                             letterSpacing: 0.5,
@@ -815,12 +866,12 @@ class RegistrationDetailScreen extends ConsumerWidget {
                                             ),
                                             decoration: BoxDecoration(
                                               color: reg.isActive
-                                                  ? Colors.green.shade50
+                                                  ? colorScheme.primaryContainer
                                                   : (reg.isReportedStolen
-                                                      ? Colors.red.shade50
+                                                      ? AppTheme.statusWarningSurface
                                                       : (reg.isArchived
-                                                          ? Colors.blueGrey.shade50
-                                                          : Colors.amber.shade50)),
+                                                          ? colorScheme.surfaceContainerHighest
+                                                          : colorScheme.surfaceContainerHighest)),
                                               borderRadius:
                                                   BorderRadius.circular(6),
                                             ),
@@ -830,12 +881,12 @@ class RegistrationDetailScreen extends ConsumerWidget {
                                                   ?.copyWith(
                                                 fontWeight: FontWeight.bold,
                                                 color: reg.isActive
-                                                    ? Colors.green.shade800
+                                                    ? colorScheme.primary
                                                     : (reg.isReportedStolen
-                                                        ? Colors.red.shade800
+                                                        ? AppTheme.statusWarning
                                                         : (reg.isArchived
-                                                            ? Colors.blueGrey.shade800
-                                                            : Colors.amber.shade900)),
+                                                            ? colorScheme.onSurfaceVariant
+                                                            : colorScheme.primary)),
                                               ),
                                             ),
                                           ),
@@ -909,7 +960,7 @@ class RegistrationDetailScreen extends ConsumerWidget {
                                       decoration: BoxDecoration(
                                         color: Colors.white,
                                         borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: Colors.grey.shade300),
+                                        border: Border.all(color: AppTheme.aauGold, width: 2),
                                       ),
                                       child: QrImageView(
                                         data: reg.qrIdentifier ?? reg.id,

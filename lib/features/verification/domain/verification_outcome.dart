@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/app_theme.dart';
 
 /// Outcomes produced by physical computer ownership verification.
 enum VerificationOutcome {
@@ -55,17 +56,17 @@ enum VerificationOutcome {
   Color get color {
     switch (this) {
       case VerificationOutcome.verified:
-        return Colors.green.shade700;
+        return AppTheme.aauGold;
       case VerificationOutcome.mismatch:
-        return Colors.amber.shade800;
+        return AppTheme.aauGoldLight;
       case VerificationOutcome.notFound:
-        return Colors.orange.shade800;
+        return AppTheme.textSecondary;
       case VerificationOutcome.suspended:
-        return Colors.deepPurple.shade700;
+        return AppTheme.aauGoldDark;
       case VerificationOutcome.stolen:
-        return Colors.red.shade700;
+        return AppTheme.statusWarning;
       case VerificationOutcome.failed:
-        return Colors.red.shade900;
+        return AppTheme.statusWarning;
     }
   }
 
